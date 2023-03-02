@@ -41,6 +41,8 @@ bool Apogee = false;
 /******************************************* END -----  DATA COLLECTION SET UP GLOBAL VALS **********************************/
 
 /*********************** START ALGO GLOBAL VALUES ***********************/
+
+/*************** START BNO STUFF***************/
 /* Set the delay between fresh samples */
 // 10 for 100 hz
 // 5 for 200 hz
@@ -56,7 +58,23 @@ imu::Quaternion quat_init;
 const calfileName = "data.dat";
 AHRS ahrs;
 //ahrsUtil::QuatUtil util = ahrsUtil::QuatUtil();
+/***************  END BNO STUFF***************/
 
+/*************** START APOGEE PRED STUFF***************/
+// determine size later, i think we go with the algo's stuff
+// i think we can use the data pointer to get accel data
+/*
+  data[0] = accelX;
+  data[1] = accelY;
+  data[2] = accelZ;
+  data[3] = gyroX;
+  data[4] = gyroY;
+  data[5] = gyroZ;
+*/
+
+
+
+/***************  END APOGEE PRED STUFF***************/
 
 /*********************** END ALGO GLOBAL VALUES ***********************/
 
@@ -82,13 +100,11 @@ void loop() {
         initQuatFound = true;
       }
     }else{
+
+        // float* dataPtr;
+        // dataPtr = GetData();
+        // LogData(dataPtr[0],dataPtr[1],dataPtr[2],dataPtr[3],dataPtr[4],dataPtr[5],dataPtr[6],dataPtr[7],dataPtr[8]);
       
-
-          /* Get a new sensor event */
-          // sensors_event_t event;
-          // bno.getEvent(&event);
-
-
         /* Board layout:
               +----------+
               |         *| RST   PITCH  ROLL  HEADING
@@ -100,20 +116,6 @@ void loop() {
               +----------+
         */
 
-        /* The WebSerial 3D Model Viewer expects data as heading, pitch, roll */
-        // Serial.print(F("Orientation: "));
-        // Serial.print(360 - (float)event.orientation.x);
-        // Serial.print(F(", "));
-        // Serial.print((float)event.orientation.y);
-        // Serial.print(F(", "));
-        // Serial.print((float)event.orientation.z);
-        // Serial.println(F(""));
-
-
-       
-
-
-       
 
         //long T1 = micros();
       
@@ -162,27 +164,6 @@ void loop() {
         file.println(data);
         file.close();
 
-
-        
-        // Serial.print(F("Quaternion: "));
-        // Serial.print((float)quat.w(), 4);
-        // Serial.print(F(", "));
-        // Serial.print((float)quat.x(), 4);
-        // Serial.print(F(", "));
-        // Serial.print((float)quat.y(), 4);
-        // Serial.print(F(", "));
-        // Serial.print((float)quat.z(), 4);
-        // Serial.println(F(""));
-
-          /* Optional: Display calibration status */
-          //displayCalStatus();
-
-          /* Optional: Display sensor status (debug only) */
-          //displaySensorStatus();
-
-          /* New line for the next sample */
-          // Serial.println("");
-
           /* Wait the specified delay before requesting new data */
           delay(BNO055_SAMPLERATE_DELAY_MS);
     }
@@ -191,6 +172,199 @@ void loop() {
 }
 
 
+
+
+void BMPinit(){
+  if(!bmp.begin_SPI(BMP_CS)){
+    Serial.println(F("bmp failed"));
+    while (1) { delay(10); }
+  }
+  // Set up oversampling and filter initialization
+  bmp.setTemperatureOversampling(BMP3_OVERSAMPLING_8X);
+  bmp.setPressureOversampling(BMP3_OVERSAMPLING_4X);
+  bmp.setIIRFilterCoeff(BMP3_IIR_FILTER_COEFF_3);
+  bmp.setOutputDataRate(BMP3_ODR_100_HZ);
+}
+
+
+void SDinit(){
+  if(!SD.begin(BUILTIN_SDCARD)){
+    Serial.println(F("SD failed"));
+    while (1) { delay(10); }
+  }
+
+
+  pinMode(button, INPUT_PULLUP); 
+
+  pinMode(buzzer, OUTPUT);
+
+  if(SD.exists("data.csv")){
+
+    ahrs.PlayBuzzerUP();
+
+    while (true){
+          if (digitalRead(button) == LOW)
+          {
+              
+              break;
+          }
+
+      }
+
+    Serial.println("#data start");
+
+
+    file = SD.open("data.csv", FILE_READ);
+    while (file.available()){
+      Serial.write(file.read());
+    }
+    file.close();
+
+    ahrs.PlayBuzzerDown();
+
+    
+    while (true){
+        if (digitalRead(button) == LOW)
+        {
+            noTone(buzzer);
+            break;
+        }
+
+    }
+
+    SD.remove("data.csv");
+  }
+
+  // eraseFiles();
+
+  file = SD.open("data.csv", FILE_WRITE);
+  file.println("time,ax,ay,az,gx,gy,gz,mx,my,mz,temp,press,alt"); //,predApp(m)
+  file.close();
+  
+}
+
+float* GetData(){
+
+  imu::Vector<3> accel = bno.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
+  imu::Vector<3> gyro = bno.getVector(Adafruit_BNO055::VECTOR_GYROSCOPE);
+  // We are not doing mag cuz like its so slow and not useful for our algo
+  // sensors_event_t accel;
+  // sensors_event_t gyro;
+  // sensors_event_t temp;
+  // sox.getEvent(&accel, &gyro, &temp);
+
+  //   //uTesla
+  // sensors_event_t mag; 
+  // lis3mdl.getEvent(&mag);
+  // float magx = mag.magnetic.x;
+  // float magy = mag.magnetic.y;
+  // float magz = mag.magnetic.z;
+
+  float press = bmp.pressure / 100.0;
+  float alt = bmp.readAltitude(SEALEVELPRESSURE_HPA);
+  float board_temperature = (bmp.temperature + bno.getTemp())/2;
+
+
+  float accelX = accel.x();
+  float accelY = accel.y();
+  float accelZ = accel.z();
+
+  float gyroX = gyro.x();
+  float gyroY = gyro.y();
+  float gyroZ = gyro.z();
+
+  static float data[9];
+
+  data[0] = accelX;
+  data[1] = accelY;
+  data[2] = accelZ;
+  data[3] = gyroX;
+  data[4] = gyroY;
+  data[5] = gyroZ;
+  data[6] = board_temperature; //magx
+  data[7] = press; //magy
+  data[8] = alt; //magz
+  // data[9] = board_temperature;
+  // data[10] = press;
+  // data[11] = alt;
+
+
+	return data; //address of structure member returned
+}
+
+void LogData(float accelX, float accelY, float accelZ, float gyroX, float gyroY, float gyroZ, float board_temperature, float press, float alt){
+    
+    // long T1 = micros();
+    
+    long time = millis();
+    
+    String data = "";
+    data.concat(time);
+    data.concat(",");
+    data.concat(accelX);
+    data.concat(",");
+    data.concat(accelY);
+    data.concat(",");
+    data.concat(accelZ);
+    data.concat(",");
+    data.concat(gyroX);
+    data.concat(",");
+    data.concat(gyroY);
+    data.concat(",");
+    data.concat(gyroZ);
+    data.concat(",");
+    // data.concat(magx);
+    // data.concat(",");
+    // data.concat(magy);
+    // data.concat(",");
+    // data.concat(magz);
+    // data.concat(",");
+    data.concat(String(board_temperature,0));
+    data.concat(",");
+    data.concat(String(press,0));
+    data.concat(",");
+    data.concat(String(alt,0));
+    data.concat(",");
+
+
+    /// BIG ERROR - I NEED TO MAKE SURE THE  DATA [ ] ARRAY IS LARGE ENOUGH AND THEN CHECK IF THE SIZE==IDX OR SMTH, THEN I NEED TO FIND A WAY TO DELETE/CLEAR THE ARRAY OR DATA[] = [] or smth
+    // nvm update ^^ 10 minutes later - i think my old code solved this issue by just making a super duper big array that can store all the flight's data until apogee or smth... 
+    // TODO: i still need to implement the data in the else statement - i think just uncoment the stuff in the else statement and just go from there.....
+    // greate
+    if(time - startTime > secondsTillApogee*1000 && !Apogee){
+      Serial.println("WRITING TO data.csv");
+      
+      file = SD.open("data.csv", FILE_WRITE);
+     
+      for(int i=0; i<idxx; i++ ){
+        file.println(Data[i]);
+        
+      }
+      file.close();
+      Serial.println("WRITING TO data.csv - DONE");
+      //delay(10000);
+      Apogee = true;
+      
+    }else if(!Apogee){
+      Data[idxx] = data;
+      // Serial.println(Data[idxx]);
+      // Serial.println(idxx);
+      idxx ++;
+    }else{
+      // file = SD.open("data.csv", FILE_WRITE);
+      // file.println(data);
+      // file.close();
+    
+    }
+    
+
+    
+    
+    // long T2 = micros();
+    // Serial.println(T2-T1);
+
+
+}
 
 void BNOinit(){
       /* Initialise the sensor */
@@ -319,74 +493,4 @@ void BNOinit(){
     dataFile.close();
     Serial.println("Data stored to SD-Card.");
     Serial.println("\n--------------------------------\n");
-}
-
-
-void BMPinit(){
-  if(!bmp.begin_SPI(BMP_CS)){
-    Serial.println(F("bmp failed"));
-    while (1) { delay(10); }
-  }
-  // Set up oversampling and filter initialization
-  bmp.setTemperatureOversampling(BMP3_OVERSAMPLING_8X);
-  bmp.setPressureOversampling(BMP3_OVERSAMPLING_4X);
-  bmp.setIIRFilterCoeff(BMP3_IIR_FILTER_COEFF_3);
-  bmp.setOutputDataRate(BMP3_ODR_100_HZ);
-}
-
-
-void SDinit(){
-  if(!SD.begin(BUILTIN_SDCARD)){
-    Serial.println(F("SD failed"));
-    while (1) { delay(10); }
-  }
-
-
-  pinMode(button, INPUT_PULLUP); 
-
-  pinMode(buzzer, OUTPUT);
-
-  if(SD.exists("data.csv")){
-
-    ahrs.PlayBuzzerUP();
-
-    while (true){
-          if (digitalRead(button) == LOW)
-          {
-              
-              break;
-          }
-
-      }
-
-    Serial.println("#data start");
-
-
-    file = SD.open("data.csv", FILE_READ);
-    while (file.available()){
-      Serial.write(file.read());
-    }
-    file.close();
-
-    ahrs.PlayBuzzerDown();
-
-    
-    while (true){
-        if (digitalRead(button) == LOW)
-        {
-            noTone(buzzer);
-            break;
-        }
-
-    }
-
-    SD.remove("data.csv");
-  }
-
-  // eraseFiles();
-
-  file = SD.open("data.csv", FILE_WRITE);
-  file.println("time,ax,ay,az,gx,gy,gz,mx,my,mz,temp,press,alt"); //,predApp(m)
-  file.close();
-  
 }
