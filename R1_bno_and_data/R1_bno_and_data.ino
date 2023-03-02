@@ -55,7 +55,6 @@ File dataFile;
 
 bool initQuatFound = false;
 imu::Quaternion quat_init;
-const calfileName = "data.dat";
 AHRS ahrs;
 //ahrsUtil::QuatUtil util = ahrsUtil::QuatUtil();
 /***************  END BNO STUFF***************/
@@ -203,7 +202,7 @@ void SDinit(){
 
   if(SD.exists("data.csv")){
 
-    ahrs.PlayBuzzerUP();
+    ahrs.PlayBuzzerUP(buzzer, toneFreq, toneCount);
 
     while (true){
           if (digitalRead(button) == LOW)
@@ -223,7 +222,7 @@ void SDinit(){
     }
     file.close();
 
-    ahrs.PlayBuzzerDown();
+    ahrs.PlayBuzzerDown(buzzer, toneFreq, toneCount);
 
     
     while (true){
@@ -384,10 +383,10 @@ void BNOinit(){
    if (SD.begin(BUILTIN_SDCARD)) {        
         sdavailable = true;        
         Serial.println("card initialized.");
-        if (SD.exists(calfileName)){
+        if (SD.exists("data.dat")){
                 Serial.println("Calibration File found");
                 
-                dataFile = SD.open(calfileName, FILE_READ);
+                dataFile = SD.open("data.dat", FILE_READ);
     
                 adafruit_bno055_offsets_t calibrationData;
                 sensor_t sensor;
@@ -488,7 +487,7 @@ void BNOinit(){
     }
 
     Serial.println("card initialized.");
-    dataFile = SD.open(calfileName, FILE_WRITE);
+    dataFile = SD.open("data.dat", FILE_WRITE);
 
 
 
@@ -505,9 +504,9 @@ void accel_to_v(){
   float dt = 0.0001;
   //float dt = gimedt();
   
-  vx = ahrs.integrate(a,b,ax,dt);
-  vy = ahrs.integrate(a,b,ay,dt);
-  vz = ahrs.integrate(a,b,az,dt);
+  float vx = ahrs.integrate(a,b,ax,dt);
+  float vy = ahrs.integrate(a,b,ay,dt);
+  float vz = ahrs.integrate(a,b,az,dt);
 
   //ahrs.sqrt10(const double number)
   // |v|  = sqrt(vx*vx + vy*vy + vz*vz);

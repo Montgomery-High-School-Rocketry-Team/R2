@@ -28,9 +28,13 @@ AHRS ahrs;
 
 void setup() {
   Serial.begin(115200);
+  Wire.setClock(1000000L);
   delay(1000);
   Serial.println("Orientation Sensor Test"); Serial.println("");
   BNOinit();
+  bno.restoreDefults();
+  
+
 }
 
 void loop() {
@@ -38,8 +42,26 @@ void loop() {
       quat_init = bno.getQuat();
       if(quat_init.x() != 0 && quat_init.y()  != 0 && quat_init.z()  != 0){
         initQuatFound = true;
+        bno.changeToAccGyro();
+        bno.set16Grange();
+        //bno.set1000dps523HZ();
+        //bno.set16Gand1000HZ();
       }
     }else{
+
+        // float timeStep = 0.01;
+        long T1 = micros();
+
+        imu::Vector<3> accel = bno.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
+        imu::Vector<3> gyro = bno.getVector(Adafruit_BNO055::VECTOR_GYROSCOPE);
+        
+        long T2 = micros();
+
+        Serial.println(T2-T1);
+        // Serial.println(bno.modee());
+        // Serial.println(bno.AccConfig());
+        // Serial.println(bno.GyroConfig());
+        // Serial.println("-----");
         // imu::Quaternion gyroIntedQuat;
         // if(gyro.magnitude() != 0){
         //   gyroIntedQuat = ahrs.integrateGyro(gyro, accel, quat_init, timeStep);
@@ -175,7 +197,7 @@ void BNOinit(){
     ahrs.displaySensorOffsets(newCalib);
 
     Serial.println("\n\nStoring calibration data to SDCARD...");
-/////////////
+
      if (!sdavailable) {
         Serial.println("Card failed, or not present");
         return;
@@ -191,4 +213,30 @@ void BNOinit(){
     Serial.println("Data stored to SD-Card.");
     Serial.println("\n--------------------------------\n");
 }
+void LogData(float accelX, float accelY, float accelZ, float gyroX, float gyroY, float gyroZ){
+    
+    // long T1 = micros();
+    
+    long time = micros();
+    
+    String data = "";
+    data.concat(time);
+    data.concat(",");
+    data.concat(accelX);
+    data.concat(",");
+    data.concat(accelY);
+    data.concat(",");
+    data.concat(accelZ);
+    data.concat(",");
+    data.concat(gyroX);
+    data.concat(",");
+    data.concat(gyroY);
+    data.concat(",");
+    data.concat(gyroZ);
+    data.concat(",");
 
+    File file;
+    file = SD.open("data.csv", FILE_WRITE);
+    file.println(data);
+    file.close();
+}
