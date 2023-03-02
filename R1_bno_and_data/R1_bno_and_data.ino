@@ -15,7 +15,7 @@
 #define SEALEVELPRESSURE_HPA (1009)
 #define BMP_CS 10
 
-
+//TODO: CHANGE THIS LATER LOL
 #define button 6
 #define buzzer 7
 // Define list of tone frequencies to play.
@@ -348,7 +348,7 @@ void SDinit(){
 
   if(SD.exists("data.csv")){
 
-    PlayBuzzerUP();
+    ahrs.PlayBuzzerUP();
 
     while (true){
           if (digitalRead(button) == LOW)
@@ -368,7 +368,7 @@ void SDinit(){
     }
     file.close();
 
-    PlayBuzzerDown();
+    ahrs.PlayBuzzerDown();
 
     
     while (true){
