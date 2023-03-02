@@ -509,6 +509,8 @@ void accel_to_v(){
   vy = ahrs.integrate(a,b,ay,dt);
   vz = ahrs.integrate(a,b,az,dt);
 
+  //ahrs.sqrt10(const double number)
+  // |v|  = sqrt(vx*vx + vy*vy + vz*vz);
   
 
 
