@@ -91,6 +91,7 @@ void setup(void)
     SDinit();
 
     BNOinit();
+    bno.restoreDefults();
 
     startTime = millis();
 }
@@ -100,6 +101,10 @@ void loop() {
       quat_init = bno.getQuat();
       if(quat_init.x() != 0 && quat_init.y()  != 0 && quat_init.z()  != 0){
         initQuatFound = true;
+        bno.changeToAccGyro();
+        // bno.set16Grange();
+        bno.set1000dps523HZ();
+        bno.set16Gand1000HZ();
       }
     }else{
 
@@ -134,11 +139,10 @@ void loop() {
         }else{
           gyroIntedQuat = quat_init;
         }
-        
-        
+      
 
-        imu::Quaternion ASD = bno.getQuat();
-        float tileAngleFromSensor = ahrs.tilt(ASD);
+        // imu::Quaternion ASD = bno.getQuat();
+        // float tileAngleFromSensor = ahrs.tilt(ASD);
         //util.printQuat(ASD);
         // Serial.println(tileAngleFromSensor);
         // Serial.println(F("~~~~~~~~"));
@@ -150,24 +154,24 @@ void loop() {
           
         //long T2 = micros();
         //Serial.println(T2-T1);
-        long time = micros();
+        // long time = micros();
 
-        File file;
-        String data = "";
-        data += String(time);
-        data += ",";
-        data += String(tiltAngleFromMath);
-        data += ",";
-        data += String(tileAngleFromSensor);
-        data += ",";
-        data += String(tileAngleFromSensor-tiltAngleFromMath);
+        // File file;
+        // String data = "";
+        // data += String(time);
+        // data += ",";
+        // data += String(tiltAngleFromMath);
+        // data += ",";
+        // data += String(tileAngleFromSensor);
+        // data += ",";
+        // data += String(tileAngleFromSensor-tiltAngleFromMath);
 
-        file = SD.open("bnodrift.txt", FILE_WRITE);
-        file.println(data);
-        file.close();
+        // file = SD.open("bnodrift.txt", FILE_WRITE);
+        // file.println(data);
+        // file.close();
 
           /* Wait the specified delay before requesting new data */
-          delay(BNO055_SAMPLERATE_DELAY_MS);
+         // delay(BNO055_SAMPLERATE_DELAY_MS);
     }
 
     
@@ -271,6 +275,8 @@ float* GetData(){
   float accelY = accel.y();
   float accelZ = accel.z();
 
+  
+
   float gyroX = gyro.x();
   float gyroY = gyro.y();
   float gyroZ = gyro.z();
@@ -351,6 +357,9 @@ void LogData(float accelX, float accelY, float accelZ, float gyroX, float gyroY,
       Data[idxx] = data;
       // Serial.println(Data[idxx]);
       // Serial.println(idxx);
+      ax[idxx] = accelX;
+      ay[idxx] = accelY;
+      az[idxx] = accelZ;
       idxx ++;
     }else{
       // file = SD.open("data.csv", FILE_WRITE);
