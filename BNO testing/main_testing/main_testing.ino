@@ -43,9 +43,9 @@ void loop() {
       if(quat_init.x() != 0 && quat_init.y()  != 0 && quat_init.z()  != 0){
         initQuatFound = true;
         bno.changeToAccGyro();
-        bno.set16Grange();
-        //bno.set1000dps523HZ();
-        //bno.set16Gand1000HZ();
+        //bno.set16Grange();
+        bno.set2000dps523HZ();
+        bno.set16Gand1000HZ();
       }
     }else{
 
@@ -56,18 +56,21 @@ void loop() {
         imu::Vector<3> gyro = bno.getVector(Adafruit_BNO055::VECTOR_GYROSCOPE);
         
         long T2 = micros();
-
         Serial.println(T2-T1);
+        
         // Serial.println(bno.modee());
         // Serial.println(bno.AccConfig());
         // Serial.println(bno.GyroConfig());
+
+
         // Serial.println("-----");
-        // imu::Quaternion gyroIntedQuat;
-        // if(gyro.magnitude() != 0){
-        //   gyroIntedQuat = ahrs.integrateGyro(gyro, accel, quat_init, timeStep);
-        // }else{
-        //   gyroIntedQuat = quat_init;
-        // }
+        float timeStep = 0.01;
+        imu::Quaternion gyroIntedQuat;
+        if(gyro.magnitude() != 0){
+          gyroIntedQuat = ahrs.integrateGyro(gyro, accel, quat_init, timeStep);
+        }else{
+          gyroIntedQuat = quat_init;
+        }
         
         
         // imu::Quaternion ASD = bno.getQuat();
@@ -75,11 +78,15 @@ void loop() {
         // //util.printQuat(ASD);
         // Serial.println(tileAngleFromSensor);
         // Serial.println(F("~~~~~~~~"));
-        // imu::Quaternion quat = gyroIntedQuat;
-        // quat_init = quat;
-        // float tiltAngleFromMath = ahrs.tilt(quat);
-        // Serial.println(tiltAngleFromMath);
-        // Serial.println(F("----"));
+        imu::Quaternion quat = gyroIntedQuat;
+        quat_init = quat;
+        float tiltAngleFromMath = ahrs.tilt(quat);
+        Serial.println(tiltAngleFromMath);
+        Serial.println(F("----"));
+
+       
+
+        
           
     }
 

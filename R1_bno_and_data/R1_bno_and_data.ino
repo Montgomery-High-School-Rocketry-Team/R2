@@ -107,9 +107,11 @@ void loop() {
         bno.set16Gand1000HZ();
       }
     }else{
-
+        float timeStep = 0.01;
+        imu::Vector<3> accel = bno.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
+        imu::Vector<3> gyro = bno.getVector(Adafruit_BNO055::VECTOR_GYROSCOPE);
         // float* dataPtr;
-        // dataPtr = GetData();
+        // dataPtr = GetData(accel,gyro);
         // LogData(dataPtr[0],dataPtr[1],dataPtr[2],dataPtr[3],dataPtr[4],dataPtr[5],dataPtr[6],dataPtr[7],dataPtr[8]);
       
         /* Board layout:
@@ -128,9 +130,7 @@ void loop() {
       
         //const float timeStep = (T2-T1)*1e6;
         //data collection....
-        float timeStep = 0.01;
-        imu::Vector<3> accel = bno.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
-        imu::Vector<3> gyro = bno.getVector(Adafruit_BNO055::VECTOR_GYROSCOPE);
+        
         
         //logic
         imu::Quaternion gyroIntedQuat;
@@ -249,10 +249,9 @@ void SDinit(){
   
 }
 
-float* GetData(){
+float* GetData(imu::Vector<3> accel, imu::Vector<3> gyro ){
 
-  imu::Vector<3> accel = bno.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
-  imu::Vector<3> gyro = bno.getVector(Adafruit_BNO055::VECTOR_GYROSCOPE);
+  
   // We are not doing mag cuz like its so slow and not useful for our algo
   // sensors_event_t accel;
   // sensors_event_t gyro;
