@@ -62,7 +62,10 @@ AHRS ahrs;
 
 /*************** START APOGEE PRED STUFF***************/
 // determine size later, i think we go with the algo's stuff
-// i think we can use the data pointer to get accel data
+// OOPSP NVM
+float ax[SIZE];
+float ay[SIZE];
+float az[SIZE];
 /*
   data[0] = accelX;
   data[1] = accelY;
@@ -494,3 +497,23 @@ void BNOinit(){
     Serial.println("Data stored to SD-Card.");
     Serial.println("\n--------------------------------\n");
 }
+
+void accel_to_v(){
+  //float integrate(int a, int b, float arr[], float dt);
+  int a = 0;
+  int b = idxx;
+  float dt = 0.0001;
+  //float dt = gimedt();
+  
+  vx = ahrs.integrate(a,b,ax,dt);
+  vy = ahrs.integrate(a,b,ay,dt);
+  vz = ahrs.integrate(a,b,az,dt);
+
+  
+
+
+
+}
+
+
+
