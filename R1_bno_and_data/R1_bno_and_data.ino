@@ -4,15 +4,49 @@
 #include <utility/imumaths.h>
 #include <rocketry_lib.h>
 #include <utility/quat.h>
+#include "Adafruit_BMP3XX.h"
 
+#include <TimeLib.h>
+#include <SPI.h>
+#include "SD.h"
+
+/*********************** START----- DATA COLLECTION SET UP GLOBAL VALS***********************/
+// montgomery sea level pressure
+#define SEALEVELPRESSURE_HPA (1009)
+#define BMP_CS 10
+
+
+#define button 6
+#define buzzer 7
+// Define list of tone frequencies to play.
+int toneFreq[] = { 262,   // C4
+                   294,   // D4
+                   330,   // E4
+                   349,   // F4
+                   392,   // G4
+                   440,   // A4
+                   494 };  // B4
+int toneCount = sizeof(toneFreq)/sizeof(int);
+
+
+File file;
+Adafruit_BMP3XX bmp;
+// seconds till apogee * targetted packaets per sec
+const int secondsTillApogee = 10;
+const int SIZE =  secondsTillApogee*500;
+String *Data = new String[SIZE];
+long startTime;
+int idxx = 0;
+bool Apogee = false;
+/******************************************* END -----  DATA COLLECTION SET UP GLOBAL VALS **********************************/
+
+/*********************** START ALGO GLOBAL VALUES ***********************/
 /* Set the delay between fresh samples */
 // 10 for 100 hz
 // 5 for 200 hz
 #define BNO055_SAMPLERATE_DELAY_MS (10)
 
 Adafruit_BNO055 bno = Adafruit_BNO055(55);
-#include "SD.h"
-#include "SPI.h"
 
 const int chipSelect = 23;
 File dataFile;
@@ -20,8 +54,11 @@ File dataFile;
 bool initQuatFound = false;
 imu::Quaternion quat_init;
 const calfileName = "data.dat";
-AHRS ahrs(3);
-ahrsUtil::QuatUtil util = ahrsUtil::QuatUtil();
+AHRS ahrs;
+//ahrsUtil::QuatUtil util = ahrsUtil::QuatUtil();
+
+
+/*********************** END ALGO GLOBAL VALUES ***********************/
 
 void setup(void)
 {
@@ -30,7 +67,12 @@ void setup(void)
     delay(1000);
     Serial.println("Orientation Sensor Test"); Serial.println("");
 
+    BMPinit();
+    SDinit();
+
     BNOinit();
+
+    startTime = millis();
 }
 
 void loop() {
@@ -165,9 +207,6 @@ void BNOinit(){
    if (SD.begin(BUILTIN_SDCARD)) {        
         sdavailable = true;        
         Serial.println("card initialized.");
-        if (SD.exists("bnodrift.txt")){
-          SD.remove("bnodrift.txt");
-        }
         if (SD.exists(calfileName)){
                 Serial.println("Calibration File found");
                 
@@ -180,7 +219,7 @@ void BNOinit(){
                 dataFile.read((uint8_t *)&calibrationData, sizeof(calibrationData));
     
                 dataFile.close();  
-                displaySensorOffsets(calibrationData);
+                ahrs.displaySensorOffsets(calibrationData);
 
                 
     
@@ -197,7 +236,7 @@ void BNOinit(){
                        bno.getSensorOffsets(checkOffset);
     
     
-                displaySensorOffsets(checkOffset);
+                ahrs.displaySensorOffsets(checkOffset);
                 Serial.println("\nChecking Offset end_______________"); 
                 /*--------------------------------------*/ 
         }
@@ -212,10 +251,10 @@ void BNOinit(){
     delay(1000);
 
     /* Display some basic information on this sensor */
-    displaySensorDetails();
+    ahrs.displaySensorDetails(bno);
 
     /* Optional: Display current status */
-    displaySensorStatus();
+    ahrs.displaySensorStatus(bno);
 
    //Crystal must be configured AFTER loading calibration data into BNO055.
     bno.setExtCrystalUse(true);
@@ -224,14 +263,10 @@ void BNOinit(){
     bno.getEvent(&event);
     if (foundCalib){
         Serial.println("Move sensor slightly to calibrate magnetometers");
-        /*
-
-
-        */
         while (!bno.isFullyCalibrated())
         {
             bno.getEvent(&event);
-            displayCalStatus();
+            ahrs.displayCalStatus(bno);
             Serial.println(" ");
             delay(BNO055_SAMPLERATE_DELAY_MS);
         }
@@ -251,7 +286,7 @@ void BNOinit(){
             Serial.print(event.orientation.z, 4);
 
             /* Optional: Display calibration status */
-            displayCalStatus();
+            ahrs.displayCalStatus(bno);
 
             /* New line for the next sample */
             Serial.println("");
@@ -266,7 +301,7 @@ void BNOinit(){
     Serial.println("Calibration Results: ");
     adafruit_bno055_offsets_t newCalib;
     bno.getSensorOffsets(newCalib);
-    displaySensorOffsets(newCalib);
+    ahrs.displaySensorOffsets(newCalib);
 
     Serial.println("\n\nStoring calibration data to SDCARD...");
 /////////////
@@ -285,109 +320,73 @@ void BNOinit(){
     Serial.println("Data stored to SD-Card.");
     Serial.println("\n--------------------------------\n");
 }
-/**************************************************************************/
-/*
-    Displays some basic information on this sensor from the unified
-    sensor API sensor_t type (see Adafruit_Sensor for more information)
-    */
-/**************************************************************************/
-void displaySensorDetails(void)
-{
-    sensor_t sensor;
-    bno.getSensor(&sensor);
-    Serial.println("------------------------------------");
-    Serial.print("Sensor:       "); Serial.println(sensor.name);
-    Serial.print("Driver Ver:   "); Serial.println(sensor.version);
-    Serial.print("Unique ID:    "); Serial.println(sensor.sensor_id);
-    Serial.print("Max Value:    "); Serial.print(sensor.max_value); Serial.println(" xxx");
-    Serial.print("Min Value:    "); Serial.print(sensor.min_value); Serial.println(" xxx");
-    Serial.print("Resolution:   "); Serial.print(sensor.resolution); Serial.println(" xxx");
-    Serial.println("------------------------------------");
-    Serial.println("");
-    delay(500);
+
+
+void BMPinit(){
+  if(!bmp.begin_SPI(BMP_CS)){
+    Serial.println(F("bmp failed"));
+    while (1) { delay(10); }
+  }
+  // Set up oversampling and filter initialization
+  bmp.setTemperatureOversampling(BMP3_OVERSAMPLING_8X);
+  bmp.setPressureOversampling(BMP3_OVERSAMPLING_4X);
+  bmp.setIIRFilterCoeff(BMP3_IIR_FILTER_COEFF_3);
+  bmp.setOutputDataRate(BMP3_ODR_100_HZ);
 }
 
-/**************************************************************************/
-/*
-    Display some basic info about the sensor status
-    */
-/**************************************************************************/
-void displaySensorStatus(void)
-{
-    /* Get the system status values (mostly for debugging purposes) */
-    uint8_t system_status, self_test_results, system_error;
-    system_status = self_test_results = system_error = 0;
-    bno.getSystemStatus(&system_status, &self_test_results, &system_error);
 
-    /* Display the results in the Serial Monitor */
-    Serial.println("");
-    Serial.print("System Status: 0x");
-    Serial.println(system_status, HEX);
-    Serial.print("Self Test:     0x");
-    Serial.println(self_test_results, HEX);
-    Serial.print("System Error:  0x");
-    Serial.println(system_error, HEX);
-    Serial.println("");
-    delay(500);
-}
+void SDinit(){
+  if(!SD.begin(BUILTIN_SDCARD)){
+    Serial.println(F("SD failed"));
+    while (1) { delay(10); }
+  }
 
-/**************************************************************************/
-/*
-    Display sensor calibration status
-    */
-/**************************************************************************/
-void displayCalStatus(void)
-{
-    /* Get the four calibration values (0..3) */
-    /* Any sensor data reporting 0 should be ignored, */
-    /* 3 means 'fully calibrated" */
-    uint8_t system, gyro, accel, mag;
-    system = gyro = accel = mag = 0;
-    bno.getCalibration(&system, &gyro, &accel, &mag);
 
-    /* The data should be ignored until the system calibration is > 0 */
-    Serial.print("\t");
-    if (!system)
-    {
-        Serial.print("! ");
+  pinMode(button, INPUT_PULLUP); 
+
+  pinMode(buzzer, OUTPUT);
+
+  if(SD.exists("data.csv")){
+
+    PlayBuzzerUP();
+
+    while (true){
+          if (digitalRead(button) == LOW)
+          {
+              
+              break;
+          }
+
+      }
+
+    Serial.println("#data start");
+
+
+    file = SD.open("data.csv", FILE_READ);
+    while (file.available()){
+      Serial.write(file.read());
+    }
+    file.close();
+
+    PlayBuzzerDown();
+
+    
+    while (true){
+        if (digitalRead(button) == LOW)
+        {
+            noTone(buzzer);
+            break;
+        }
+
     }
 
-    /* Display the individual values */
-    Serial.print("Sys:");
-    Serial.print(system, DEC);
-    Serial.print(" G:");
-    Serial.print(gyro, DEC);
-    Serial.print(" A:");
-    Serial.print(accel, DEC);
-    Serial.print(" M:");
-    Serial.print(mag, DEC);
-}
+    SD.remove("data.csv");
+  }
 
-/**************************************************************************/
-/*
-    Display the raw calibration offset and radius data
-    */
-/**************************************************************************/
-void displaySensorOffsets(const adafruit_bno055_offsets_t &calibData)
-{
-    Serial.print("Accelerometer: ");
-    Serial.print(calibData.accel_offset_x); Serial.print(" ");
-    Serial.print(calibData.accel_offset_y); Serial.print(" ");
-    Serial.print(calibData.accel_offset_z); Serial.print(" ");
+  // eraseFiles();
 
-    Serial.print("\nGyro: ");
-    Serial.print(calibData.gyro_offset_x); Serial.print(" ");
-    Serial.print(calibData.gyro_offset_y); Serial.print(" ");
-    Serial.print(calibData.gyro_offset_z); Serial.print(" ");
-
-    Serial.print("\nMag: ");
-    Serial.print(calibData.mag_offset_x); Serial.print(" ");
-    Serial.print(calibData.mag_offset_y); Serial.print(" ");
-    Serial.print(calibData.mag_offset_z); Serial.print(" ");
-
-    Serial.print("\nAccel Radius: ");
-    Serial.print(calibData.accel_radius);
-
-    Serial.print("\nMag Radius: ");
-    Serial.print(calibData.mag_radius);
+  file = SD.open("data.csv", FILE_WRITE);
+  file.println("time,ax,ay,az,gx,gy,gz,mx,my,mz,temp,press,alt"); //,predApp(m)
+  file.close();
+  
 }
