@@ -44,7 +44,7 @@ void loop() {
         initQuatFound = true;
         bno.changeToAccGyro();
         //bno.set16Grange();
-        bno.set2000dps523HZ();
+        //bno.set2000dps523HZ();
         bno.set16Gand1000HZ();
       }
     }else{

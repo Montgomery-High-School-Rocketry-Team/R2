@@ -506,7 +506,7 @@ void BNOinit(){
     Serial.println("\n--------------------------------\n");
 }
 
-void accel_to_v(){
+float[3] accel_to_v(){
   //float integrate(int a, int b, float arr[], float dt);
   int a = 0;
   int b = idxx;
@@ -519,8 +519,12 @@ void accel_to_v(){
 
   //ahrs.sqrt10(const double number)
   // |v|  = sqrt10(vx*vx + vy*vy + vz*vz);
-  
+  float v[3];
+  v[0] = vx;
+  v[1] = vy;
+  v[2] = vz;
 
+  return v;
 
 
 }
