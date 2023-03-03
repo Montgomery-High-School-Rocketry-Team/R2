@@ -33,7 +33,7 @@ File file;
 Adafruit_BMP3XX bmp;
 // seconds till apogee * targetted packaets per sec
 const int secondsTillApogee = 10;
-const int SIZE =  secondsTillApogee*300;
+const int SIZE =  secondsTillApogee*400;
 String *Data = new String[SIZE];
 long startTime;
 int idxx = 0;
