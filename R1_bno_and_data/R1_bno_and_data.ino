@@ -33,7 +33,7 @@ File file;
 Adafruit_BMP3XX bmp;
 // seconds till apogee * targetted packaets per sec
 const int secondsTillApogee = 10;
-const int SIZE =  secondsTillApogee*500;
+const int SIZE =  secondsTillApogee*300;
 String *Data = new String[SIZE];
 long startTime;
 int idxx = 0;
@@ -103,16 +103,17 @@ void loop() {
         initQuatFound = true;
         bno.changeToAccGyro();
         // bno.set16Grange();
-        bno.set1000dps523HZ();
+        bno.set2000dps523HZ();
         bno.set16Gand1000HZ();
       }
     }else{
         float timeStep = 0.01;
         imu::Vector<3> accel = bno.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
         imu::Vector<3> gyro = bno.getVector(Adafruit_BNO055::VECTOR_GYROSCOPE);
-        // float* dataPtr;
-        // dataPtr = GetData(accel,gyro);
-        // LogData(dataPtr[0],dataPtr[1],dataPtr[2],dataPtr[3],dataPtr[4],dataPtr[5],dataPtr[6],dataPtr[7],dataPtr[8]);
+        
+        float* dataPtr;
+        dataPtr = GetData(accel,gyro);
+        LogData(dataPtr[0],dataPtr[1],dataPtr[2],dataPtr[3],dataPtr[4],dataPtr[5],dataPtr[6],dataPtr[7],dataPtr[8]);
       
         /* Board layout:
               +----------+
@@ -517,7 +518,7 @@ void accel_to_v(){
   float vz = ahrs.integrate(a,b,az,dt);
 
   //ahrs.sqrt10(const double number)
-  // |v|  = sqrt(vx*vx + vy*vy + vz*vz);
+  // |v|  = sqrt10(vx*vx + vy*vy + vz*vz);
   
 
 
