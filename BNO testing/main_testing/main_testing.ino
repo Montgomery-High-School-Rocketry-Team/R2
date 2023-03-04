@@ -34,6 +34,7 @@ void setup() {
   BNOinit();
   bno.restoreDefults();
   
+  delay(3000);
 
 }
 
@@ -41,11 +42,14 @@ void loop() {
   if(!initQuatFound){
       quat_init = bno.getQuat();
       if(quat_init.x() != 0 && quat_init.y()  != 0 && quat_init.z()  != 0){
-        initQuatFound = true;
-        bno.changeToAccGyro();
-        //bno.set16Grange();
-        //bno.set2000dps523HZ();
-        bno.set16Gand1000HZ();
+        if( 89 <= ahrs.tilt(quat_init) <= 91 ){
+          initQuatFound = true;
+          bno.changeToAccGyro();
+          //bno.set16Grange();
+          bno.set2000dps523HZ();
+          bno.set16Gand1000HZ();
+        }
+        
       }
     }else{
 
@@ -56,7 +60,7 @@ void loop() {
         imu::Vector<3> gyro = bno.getVector(Adafruit_BNO055::VECTOR_GYROSCOPE);
         
         long T2 = micros();
-        Serial.println(T2-T1);
+        //Serial.println(T2-T1);
         
         // Serial.println(bno.modee());
         // Serial.println(bno.AccConfig());
@@ -73,18 +77,34 @@ void loop() {
         }
         
         
-        // imu::Quaternion ASD = bno.getQuat();
-        // float tileAngleFromSensor = ahrs.tilt(ASD);
-        // //util.printQuat(ASD);
-        // Serial.println(tileAngleFromSensor);
-        // Serial.println(F("~~~~~~~~"));
-        imu::Quaternion quat = gyroIntedQuat;
-        quat_init = quat;
-        float tiltAngleFromMath = ahrs.tilt(quat);
-        Serial.println(tiltAngleFromMath);
-        Serial.println(F("----"));
+        imu::Quaternion ASD = bno.getQuat();
+        float tileAngleFromSensor = ahrs.tilt(ASD);
+        //util.printQuat(ASD);
+        Serial.println(tileAngleFromSensor);
+        Serial.println(F("~~~~~~~~"));
+        // imu::Quaternion quat = gyroIntedQuat;
+        // quat_init = quat;
+        // float tiltAngleFromMath = ahrs.tilt(quat);
+        // Serial.println(tiltAngleFromMath);
+        // Serial.println(F("----"));
 
-       
+
+        // long time = millis();
+        // File file;
+        // String data = "";
+        // data += String(time);
+        // data += ",";
+        // data += String(tiltAngleFromMath);
+        // data += ",";
+        // data += String(tileAngleFromSensor);
+        // data += ",";
+        // data += String(tileAngleFromSensor-tiltAngleFromMath);
+
+        // file = SD.open("bnodrift.txt", FILE_WRITE);
+        // file.println(data);
+        // file.close();
+
+        //delay(BNO055_SAMPLERATE_DELAY_MS);
 
         
           
