@@ -87,114 +87,109 @@ void setup(void)
     Serial.println("Orientation Sensor Test"); Serial.println("");
 
     //bmp is ACTUALLY ACTUALLY SPI
-    //BMPinit();
+    BMPinit();
     SDinit();
 
-    //BNOinit();
-    //bno.restoreDefults();
+    BNOinit();
+    bno.restoreDefults();
 
-    //delay(3000);
+    delay(3000);
 
-    //startTime = millis();
+    startTime = millis();
 }
 
 void loop() {
-    // if(!initQuatFound){
-    //   quat_init = bno.getQuat();
-    //   if(quat_init.x() != 0 && quat_init.y()  != 0 && quat_init.z()  != 0){
-    //     initQuatFound = true;
-    //     bno.changeToAccGyro();
-    //     // bno.set16Grange();
-    //     bno.set2000dps523HZ();
-    //     bno.set16Gand1000HZ();
-    //   }
-    // }else{
-    //     float timeStep = 0.006;
-    //     imu::Vector<3> accel = bno.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
-    //     imu::Vector<3> gyro = bno.getVector(Adafruit_BNO055::VECTOR_GYROSCOPE);
-        
-    //     float* dataPtr;
-    //     dataPtr = GetData(accel,gyro);
-    //     LogData(dataPtr[0],dataPtr[1],dataPtr[2],dataPtr[3],dataPtr[4],dataPtr[5],dataPtr[6],dataPtr[7],dataPtr[8]);
+    if(!initQuatFound){
+      quat_init = bno.getQuat();
+      if(quat_init.x() != 0 && quat_init.y()  != 0 && quat_init.z()  != 0){
+        initQuatFound = true;
+        bno.changeToAccGyro();
+        // bno.set16Grange();
+        bno.set2000dps523HZ();
+        bno.set16Gand1000HZ();
+      }
+    }else{
+        long T1 = micros();
       
-    //     /* Board layout:
-    //           +----------+
-    //           |         *| RST   PITCH  ROLL  HEADING
-    //       ADR |*        *| SCL
-    //       INT |*        *| SDA     ^            /->
-    //       PS1 |*        *| GND     |            |
-    //       PS0 |*        *| 3VO     Y    Z-->    \-X
-    //           |         *| VIN
-    //           +----------+
-    //     */
-
-
-    //     //long T1 = micros();
-      
-    //     //const float timeStep = (T2-T1)*1e6;
-    //     //data collection....
+        float timeStep = 0.006;
+        imu::Vector<3> accel = bno.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
+        imu::Vector<3> gyro = bno.getVector(Adafruit_BNO055::VECTOR_GYROSCOPE);
         
         
-    //     //logic
-    //     imu::Quaternion gyroIntedQuat;
-    //     if(gyro.magnitude() != 0){
-    //       gyroIntedQuat = ahrs.integrateGyro(gyro, accel, quat_init, timeStep);
-    //     }else{
-    //       gyroIntedQuat = quat_init;
-    //     }
+        float* dataPtr;
+        dataPtr = GetData(accel,gyro);
+        LogData(dataPtr[0],dataPtr[1],dataPtr[2],dataPtr[3],dataPtr[4],dataPtr[5],dataPtr[6],dataPtr[7],dataPtr[8]);
+      
+        /* Board layout:
+              +----------+
+              |         *| RST   PITCH  ROLL  HEADING
+          ADR |*        *| SCL
+          INT |*        *| SDA     ^            /->
+          PS1 |*        *| GND     |            |
+          PS0 |*        *| 3VO     Y    Z-->    \-X
+              |         *| VIN
+              +----------+
+        */
+
+
+        
+      
+        //const float timeStep = (T2-T1)*1e6;
+        //data collection....
+        
+        
+        //logic
+        imu::Quaternion gyroIntedQuat;
+        if(gyro.magnitude() != 0){
+          gyroIntedQuat = ahrs.integrateGyro(gyro, accel, quat_init, timeStep);
+        }else{
+          gyroIntedQuat = quat_init;
+        }
       
 
-    //     // imu::Quaternion ASD = bno.getQuat();
-    //     // float tileAngleFromSensor = ahrs.tilt(ASD);
-    //     //util.printQuat(ASD);
-    //     // Serial.println(tileAngleFromSensor);
-    //     // Serial.println(F("~~~~~~~~"));
-    //     imu::Quaternion quat = gyroIntedQuat;
-    //     quat_init = quat;
-    //     float tiltAngleFromMath = ahrs.tilt(quat);
-    //     // Serial.println(tiltAngleFromMath);
-    //     // Serial.println(F("----"));
+        // imu::Quaternion ASD = bno.getQuat();
+        // float tileAngleFromSensor = ahrs.tilt(ASD);
+        //util.printQuat(ASD);
+        // Serial.println(tileAngleFromSensor);
+        // Serial.println(F("~~~~~~~~"));
+        imu::Quaternion quat = gyroIntedQuat;
+        quat_init = quat;
+        float tiltAngleFromMath = ahrs.tilt(quat);
+        // Serial.println(tiltAngleFromMath);
+        // Serial.println(F("----"));
           
-    //     //long T2 = micros();
-    //     //Serial.println(T2-T1);
-    //     // long time = micros();
+        
 
-    //     // File file;
-    //     // String data = "";
-    //     // data += String(time);
-    //     // data += ",";
-    //     // data += String(tiltAngleFromMath);
-    //     // data += ",";
-    //     // data += String(tileAngleFromSensor);
-    //     // data += ",";
-    //     // data += String(tileAngleFromSensor-tiltAngleFromMath);
+         // Brian's Values
+        float alt = bmp.readAltitude(SEALEVELPRESSURE_HPA);
+        
+         //tiltAngleFromMath
+        // accelX = ax[idxx] ;
+        // accelY = ay[idxx];
+        // accelZ = az[idxx];
+        
+        float* v;
+        v = accel_to_v();
+        float vx = v[0];
+        float vy = v[1];
+        float vz = v[2];
 
-    //     // file = SD.open("bnodrift.txt", FILE_WRITE);
-    //     // file.println(data);
-    //     // file.close();
-
-    //       /* Wait the specified delay before requesting new data */
-    //      // delay(BNO055_SAMPLERATE_DELAY_MS);
-
-
-    //      // Brian's Values
-    //      float alt = bmp.readAltitude(SEALEVELPRESSURE_HPA);
-    //      //tiltAngleFromMath
-            // float* v;
-            // v = accel_to_v();
-            // float vx = v[0];
-            // float vy = v[1];
-            // float vz = v[2];
-    // }
+        long T2 = micros();
+        Serial.println(T2-T1);
+    }
 
     
 }
 
 
 
-
+// change to spi later 
 void BMPinit(){
-  if(!bmp.begin_SPI(BMP_CS)){
+  // if(!bmp.begin_SPI(BMP_CS)){
+  //   Serial.println(F("bmp failed"));
+  //   while (1) { delay(10); }
+  // }
+  if(!bmp.begin_I2C()){
     Serial.println(F("bmp failed"));
     while (1) { delay(10); }
   }
@@ -371,9 +366,9 @@ void LogData(float accelX, float accelY, float accelZ, float gyroX, float gyroY,
       Data[idxx] = data;
       // Serial.println(Data[idxx]);
       // Serial.println(idxx);
-      ax[idxx] = accelX;
-      ay[idxx] = accelY;
-      az[idxx] = accelZ;
+      // ax[idxx] = accelX;
+      // ay[idxx] = accelY;
+      // az[idxx] = accelZ;
       idxx ++;
     }else{
       // file = SD.open("data.csv", FILE_WRITE);
@@ -542,6 +537,14 @@ float* accel_to_v(){
   return v;
 
 
+}
+
+void update_a_s(){
+  imu::Vector<3> accel = bno.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
+  ax[idxx] = accel.x();
+  ay[idxx] = accel.y();    
+  az[idxx] = accel.z();
+  
 }
 
 
