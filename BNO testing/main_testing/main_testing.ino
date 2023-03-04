@@ -42,7 +42,7 @@ void loop() {
   if(!initQuatFound){
       quat_init = bno.getQuat();
       if(quat_init.x() != 0 && quat_init.y()  != 0 && quat_init.z()  != 0){
-        if( 89 <= ahrs.tilt(quat_init) <= 91 ){
+        if( 0 <= ahrs.tilt(quat_init) <= 2 ){
           initQuatFound = true;
           bno.changeToAccGyro();
           //bno.set16Grange();
@@ -77,16 +77,16 @@ void loop() {
         }
         
         
-        imu::Quaternion ASD = bno.getQuat();
-        float tileAngleFromSensor = ahrs.tilt(ASD);
-        //util.printQuat(ASD);
-        Serial.println(tileAngleFromSensor);
-        Serial.println(F("~~~~~~~~"));
-        // imu::Quaternion quat = gyroIntedQuat;
-        // quat_init = quat;
-        // float tiltAngleFromMath = ahrs.tilt(quat);
-        // Serial.println(tiltAngleFromMath);
-        // Serial.println(F("----"));
+        // imu::Quaternion ASD = bno.getQuat();
+        // float tileAngleFromSensor = ahrs.tilt(ASD);
+        // //util.printQuat(ASD);
+        // Serial.println(tileAngleFromSensor);
+        // Serial.println(F("~~~~~~~~"));
+        imu::Quaternion quat = gyroIntedQuat;
+        quat_init = quat;
+        float tiltAngleFromMath = ahrs.tilt(quat);
+        Serial.println(tiltAngleFromMath);
+        Serial.println(F("----"));
 
 
         // long time = millis();
