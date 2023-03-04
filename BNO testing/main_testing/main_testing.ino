@@ -42,13 +42,12 @@ void loop() {
   if(!initQuatFound){
       quat_init = bno.getQuat();
       if(quat_init.x() != 0 && quat_init.y()  != 0 && quat_init.z()  != 0){
-        if( 0 <= ahrs.tilt(quat_init) <= 2 ){
           initQuatFound = true;
           bno.changeToAccGyro();
           //bno.set16Grange();
           bno.set2000dps523HZ();
           bno.set16Gand1000HZ();
-        }
+      
         
       }
     }else{
@@ -68,7 +67,7 @@ void loop() {
 
 
         // Serial.println("-----");
-        float timeStep = 0.01;
+        float timeStep = 0.006;
         imu::Quaternion gyroIntedQuat;
         if(gyro.magnitude() != 0){
           gyroIntedQuat = ahrs.integrateGyro(gyro, accel, quat_init, timeStep);
