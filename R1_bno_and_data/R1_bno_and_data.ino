@@ -93,6 +93,8 @@ void setup(void)
     BNOinit();
     bno.restoreDefults();
 
+    delay(3000);
+
     startTime = millis();
 }
 
@@ -107,7 +109,7 @@ void loop() {
         bno.set16Gand1000HZ();
       }
     }else{
-        float timeStep = 0.01;
+        float timeStep = 0.006;
         imu::Vector<3> accel = bno.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
         imu::Vector<3> gyro = bno.getVector(Adafruit_BNO055::VECTOR_GYROSCOPE);
         
@@ -173,6 +175,12 @@ void loop() {
 
           /* Wait the specified delay before requesting new data */
          // delay(BNO055_SAMPLERATE_DELAY_MS);
+
+
+         // Brian's Values
+         float alt = bmp.readAltitude(SEALEVELPRESSURE_HPA);
+         //tiltAngleFromMath
+          float v[3] = accel_to_v();
     }
 
     
@@ -511,6 +519,7 @@ float[3] accel_to_v(){
   int a = 0;
   int b = idxx;
   float dt = 0.0001;
+  // currently i think dt = 0.006
   //float dt = gimedt();
   
   float vx = ahrs.integrate(a,b,ax,dt);
