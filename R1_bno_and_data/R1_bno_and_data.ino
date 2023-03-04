@@ -16,8 +16,8 @@
 #define BMP_CS 10
 
 //TODO: CHANGE THIS LATER LOL
-#define button 6
-#define buzzer 7
+#define button 23
+#define buzzer 21
 // Define list of tone frequencies to play.
 int toneFreq[] = { 262,   // C4
                    294,   // D4
@@ -50,7 +50,6 @@ bool Apogee = false;
 
 Adafruit_BNO055 bno = Adafruit_BNO055(55);
 
-const int chipSelect = 23;
 File dataFile;
 
 bool initQuatFound = false;
@@ -87,101 +86,106 @@ void setup(void)
     delay(1000);
     Serial.println("Orientation Sensor Test"); Serial.println("");
 
-    BMPinit();
+    //bmp is ACTUALLY ACTUALLY SPI
+    //BMPinit();
     SDinit();
 
-    BNOinit();
-    bno.restoreDefults();
+    //BNOinit();
+    //bno.restoreDefults();
 
-    delay(3000);
+    //delay(3000);
 
-    startTime = millis();
+    //startTime = millis();
 }
 
 void loop() {
-    if(!initQuatFound){
-      quat_init = bno.getQuat();
-      if(quat_init.x() != 0 && quat_init.y()  != 0 && quat_init.z()  != 0){
-        initQuatFound = true;
-        bno.changeToAccGyro();
-        // bno.set16Grange();
-        bno.set2000dps523HZ();
-        bno.set16Gand1000HZ();
-      }
-    }else{
-        float timeStep = 0.006;
-        imu::Vector<3> accel = bno.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
-        imu::Vector<3> gyro = bno.getVector(Adafruit_BNO055::VECTOR_GYROSCOPE);
+    // if(!initQuatFound){
+    //   quat_init = bno.getQuat();
+    //   if(quat_init.x() != 0 && quat_init.y()  != 0 && quat_init.z()  != 0){
+    //     initQuatFound = true;
+    //     bno.changeToAccGyro();
+    //     // bno.set16Grange();
+    //     bno.set2000dps523HZ();
+    //     bno.set16Gand1000HZ();
+    //   }
+    // }else{
+    //     float timeStep = 0.006;
+    //     imu::Vector<3> accel = bno.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
+    //     imu::Vector<3> gyro = bno.getVector(Adafruit_BNO055::VECTOR_GYROSCOPE);
         
-        float* dataPtr;
-        dataPtr = GetData(accel,gyro);
-        LogData(dataPtr[0],dataPtr[1],dataPtr[2],dataPtr[3],dataPtr[4],dataPtr[5],dataPtr[6],dataPtr[7],dataPtr[8]);
+    //     float* dataPtr;
+    //     dataPtr = GetData(accel,gyro);
+    //     LogData(dataPtr[0],dataPtr[1],dataPtr[2],dataPtr[3],dataPtr[4],dataPtr[5],dataPtr[6],dataPtr[7],dataPtr[8]);
       
-        /* Board layout:
-              +----------+
-              |         *| RST   PITCH  ROLL  HEADING
-          ADR |*        *| SCL
-          INT |*        *| SDA     ^            /->
-          PS1 |*        *| GND     |            |
-          PS0 |*        *| 3VO     Y    Z-->    \-X
-              |         *| VIN
-              +----------+
-        */
+    //     /* Board layout:
+    //           +----------+
+    //           |         *| RST   PITCH  ROLL  HEADING
+    //       ADR |*        *| SCL
+    //       INT |*        *| SDA     ^            /->
+    //       PS1 |*        *| GND     |            |
+    //       PS0 |*        *| 3VO     Y    Z-->    \-X
+    //           |         *| VIN
+    //           +----------+
+    //     */
 
 
-        //long T1 = micros();
+    //     //long T1 = micros();
       
-        //const float timeStep = (T2-T1)*1e6;
-        //data collection....
+    //     //const float timeStep = (T2-T1)*1e6;
+    //     //data collection....
         
         
-        //logic
-        imu::Quaternion gyroIntedQuat;
-        if(gyro.magnitude() != 0){
-          gyroIntedQuat = ahrs.integrateGyro(gyro, accel, quat_init, timeStep);
-        }else{
-          gyroIntedQuat = quat_init;
-        }
+    //     //logic
+    //     imu::Quaternion gyroIntedQuat;
+    //     if(gyro.magnitude() != 0){
+    //       gyroIntedQuat = ahrs.integrateGyro(gyro, accel, quat_init, timeStep);
+    //     }else{
+    //       gyroIntedQuat = quat_init;
+    //     }
       
 
-        // imu::Quaternion ASD = bno.getQuat();
-        // float tileAngleFromSensor = ahrs.tilt(ASD);
-        //util.printQuat(ASD);
-        // Serial.println(tileAngleFromSensor);
-        // Serial.println(F("~~~~~~~~"));
-        imu::Quaternion quat = gyroIntedQuat;
-        quat_init = quat;
-        float tiltAngleFromMath = ahrs.tilt(quat);
-        // Serial.println(tiltAngleFromMath);
-        // Serial.println(F("----"));
+    //     // imu::Quaternion ASD = bno.getQuat();
+    //     // float tileAngleFromSensor = ahrs.tilt(ASD);
+    //     //util.printQuat(ASD);
+    //     // Serial.println(tileAngleFromSensor);
+    //     // Serial.println(F("~~~~~~~~"));
+    //     imu::Quaternion quat = gyroIntedQuat;
+    //     quat_init = quat;
+    //     float tiltAngleFromMath = ahrs.tilt(quat);
+    //     // Serial.println(tiltAngleFromMath);
+    //     // Serial.println(F("----"));
           
-        //long T2 = micros();
-        //Serial.println(T2-T1);
-        // long time = micros();
+    //     //long T2 = micros();
+    //     //Serial.println(T2-T1);
+    //     // long time = micros();
 
-        // File file;
-        // String data = "";
-        // data += String(time);
-        // data += ",";
-        // data += String(tiltAngleFromMath);
-        // data += ",";
-        // data += String(tileAngleFromSensor);
-        // data += ",";
-        // data += String(tileAngleFromSensor-tiltAngleFromMath);
+    //     // File file;
+    //     // String data = "";
+    //     // data += String(time);
+    //     // data += ",";
+    //     // data += String(tiltAngleFromMath);
+    //     // data += ",";
+    //     // data += String(tileAngleFromSensor);
+    //     // data += ",";
+    //     // data += String(tileAngleFromSensor-tiltAngleFromMath);
 
-        // file = SD.open("bnodrift.txt", FILE_WRITE);
-        // file.println(data);
-        // file.close();
+    //     // file = SD.open("bnodrift.txt", FILE_WRITE);
+    //     // file.println(data);
+    //     // file.close();
 
-          /* Wait the specified delay before requesting new data */
-         // delay(BNO055_SAMPLERATE_DELAY_MS);
+    //       /* Wait the specified delay before requesting new data */
+    //      // delay(BNO055_SAMPLERATE_DELAY_MS);
 
 
-         // Brian's Values
-         float alt = bmp.readAltitude(SEALEVELPRESSURE_HPA);
-         //tiltAngleFromMath
-          float v[3] = accel_to_v();
-    }
+    //      // Brian's Values
+    //      float alt = bmp.readAltitude(SEALEVELPRESSURE_HPA);
+    //      //tiltAngleFromMath
+            // float* v;
+            // v = accel_to_v();
+            // float vx = v[0];
+            // float vy = v[1];
+            // float vz = v[2];
+    // }
 
     
 }
@@ -226,7 +230,7 @@ void SDinit(){
 
       }
 
-    Serial.println("#data start");
+    Serial.println("##data start");
 
 
     file = SD.open("data.csv", FILE_READ);
@@ -234,6 +238,8 @@ void SDinit(){
       Serial.write(file.read());
     }
     file.close();
+
+    Serial.println("##data end");
 
     ahrs.PlayBuzzerDown(buzzer, toneFreq, toneCount);
 
@@ -251,9 +257,9 @@ void SDinit(){
   }
 
   // eraseFiles();
-
   file = SD.open("data.csv", FILE_WRITE);
-  file.println("time,ax,ay,az,gx,gy,gz,mx,my,mz,temp,press,alt"); //,predApp(m)
+  //file.println("time,ax,ay,az,gx,gy,gz,mx,my,mz,temp,press,alt"); //,predApp(m)
+  file.println("time,ax,ay,az,gx,gy,gz,temp,press,alt"); 
   file.close();
   
 }
@@ -514,7 +520,7 @@ void BNOinit(){
     Serial.println("\n--------------------------------\n");
 }
 
-float[3] accel_to_v(){
+float* accel_to_v(){
   //float integrate(int a, int b, float arr[], float dt);
   int a = 0;
   int b = idxx;
@@ -528,7 +534,7 @@ float[3] accel_to_v(){
 
   //ahrs.sqrt10(const double number)
   // |v|  = sqrt10(vx*vx + vy*vy + vz*vz);
-  float v[3];
+  static float v[3];
   v[0] = vx;
   v[1] = vy;
   v[2] = vz;

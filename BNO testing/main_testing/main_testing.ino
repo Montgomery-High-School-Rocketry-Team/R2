@@ -67,7 +67,7 @@ void loop() {
 
 
         // Serial.println("-----");
-        float timeStep = 0.006;
+        float timeStep = 0.0065;
         imu::Quaternion gyroIntedQuat;
         if(gyro.magnitude() != 0){
           gyroIntedQuat = ahrs.integrateGyro(gyro, accel, quat_init, timeStep);
