@@ -38,6 +38,8 @@ String *Data = new String[SIZE];
 long startTime;
 int idxx = 0;
 bool Apogee = false;
+//in in seconds
+float  GLOB_DT = 0.011;
 /******************************************* END -----  DATA COLLECTION SET UP GLOBAL VALS **********************************/
 
 /*********************** START ALGO GLOBAL VALUES ***********************/
@@ -64,6 +66,7 @@ AHRS ahrs;
 float ax[SIZE];
 float ay[SIZE];
 float az[SIZE];
+float altitude[SIZE];
 /*
   data[0] = accelX;
   data[1] = accelY;
@@ -108,9 +111,9 @@ void loop() {
         bno.set16Gand1000HZ();
       }
     }else{
-        long T1 = micros();
+        //long T1 = micros();
       
-        float timeStep = 0.006;
+        float timeStep = GLOB_DT;
         imu::Vector<3> accel = bno.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
         imu::Vector<3> gyro = bno.getVector(Adafruit_BNO055::VECTOR_GYROSCOPE);
         
@@ -154,18 +157,15 @@ void loop() {
         imu::Quaternion quat = gyroIntedQuat;
         quat_init = quat;
         float tiltAngleFromMath = ahrs.tilt(quat);
-        // Serial.println(tiltAngleFromMath);
-        // Serial.println(F("----"));
+        Serial.println(tiltAngleFromMath);
+        Serial.println(F("----"));
           
         
 
          // Brian's Values
-        float alt = bmp.readAltitude(SEALEVELPRESSURE_HPA);
+        float alt = altitude[idxx];
         
-         //tiltAngleFromMath
-        // accelX = ax[idxx] ;
-        // accelY = ay[idxx];
-        // accelZ = az[idxx];
+         //tiltAngleFromMaths
         
         float* v;
         v = accel_to_v();
@@ -173,8 +173,9 @@ void loop() {
         float vy = v[1];
         float vz = v[2];
 
-        long T2 = micros();
-        Serial.println(T2-T1);
+        // long T2 = micros();
+        // GLOB_DT = (T2-T1)/1000000;
+
     }
 
     
@@ -273,9 +274,11 @@ float* GetData(imu::Vector<3> accel, imu::Vector<3> gyro ){
   // float magy = mag.magnetic.y;
   // float magz = mag.magnetic.z;
 
-  float press = bmp.pressure / 100.0;
+  //float press = bmp.pressure / 100.0;
+  float press = 6969;
   float alt = bmp.readAltitude(SEALEVELPRESSURE_HPA);
-  float board_temperature = (bmp.temperature + bno.getTemp())/2;
+  //float board_temperature = (bmp.temperature + bno.getTemp())/2;
+  float board_temperature=6969;
 
 
   float accelX = accel.x();
@@ -362,6 +365,7 @@ void LogData(float accelX, float accelY, float accelZ, float gyroX, float gyroY,
       
     }else if(!Apogee){
       Data[idxx] = data;
+      altitude[idxx] = alt;
       // Serial.println(Data[idxx]);
       // Serial.println(idxx);
       // ax[idxx] = accelX;
@@ -517,9 +521,7 @@ float* accel_to_v(){
   //float integrate(int a, int b, float arr[], float dt);
   int a = 0;
   int b = idxx;
-  float dt = 0.0001;
-  // currently i think dt = 0.006
-  //float dt = gimedt();
+  float dt = GLOB_DT;
   
   float vx = ahrs.integrate(a,b,ax,dt);
   float vy = ahrs.integrate(a,b,ay,dt);
