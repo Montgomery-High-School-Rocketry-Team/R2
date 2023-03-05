@@ -84,9 +84,8 @@ void setup(void)
     Serial.begin(115200);
     Wire.setClock(1000000);
     delay(1000);
-    Serial.println("Orientation Sensor Test"); Serial.println("");
+    //Serial.println("Orientation Sensor Test"); Serial.println("");
 
-    //bmp is ACTUALLY ACTUALLY SPI
     BMPinit();
     SDinit();
 
@@ -183,21 +182,20 @@ void loop() {
 
 
 
-// change to spi later 
 void BMPinit(){
-  // if(!bmp.begin_SPI(BMP_CS)){
-  //   Serial.println(F("bmp failed"));
-  //   while (1) { delay(10); }
-  // }
-  if(!bmp.begin_I2C()){
+  if(!bmp.begin_SPI(BMP_CS)){
     Serial.println(F("bmp failed"));
     while (1) { delay(10); }
   }
+  // if(!bmp.begin_I2C()){
+  //   Serial.println(F("bmp failed"));
+  //   while (1) { delay(10); }
+  // }
   // Set up oversampling and filter initialization
   bmp.setTemperatureOversampling(BMP3_OVERSAMPLING_8X);
   bmp.setPressureOversampling(BMP3_OVERSAMPLING_4X);
   bmp.setIIRFilterCoeff(BMP3_IIR_FILTER_COEFF_3);
-  bmp.setOutputDataRate(BMP3_ODR_100_HZ);
+  bmp.setOutputDataRate(BMP3_ODR_200_HZ);
 }
 
 
