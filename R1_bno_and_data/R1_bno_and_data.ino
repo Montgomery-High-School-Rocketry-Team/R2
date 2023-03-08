@@ -5,7 +5,7 @@
 #include <rocketry_lib.h>
 #include <utility/quat.h>
 #include "Adafruit_BMP3XX.h"
-
+#include <Stepper.h>
 #include <TimeLib.h>
 #include <SPI.h>
 #include "SD.h"
@@ -43,6 +43,11 @@ float  GLOB_DT = 0.011;
 /******************************************* END -----  DATA COLLECTION SET UP GLOBAL VALS **********************************/
 
 /*********************** START ALGO GLOBAL VALUES ***********************/
+
+//**motor stuff**
+const int stepsPerRevolution = 2038;
+Stepper _stepper = Stepper(stepsPerRevolution, 8,9,10,11);
+// **end motor stuff**
 
 /*************** START BNO STUFF***************/
 /* Set the delay between fresh samples */
@@ -536,6 +541,19 @@ float* accel_to_v(){
 
   return v;
 
+
+}
+
+/*
+moves stepper
+@param angle
+make sure the angle is in radians 
+*/
+void moveStepper(int rpm, float angle){
+  _stepper.setSpeed(rpm);
+  float steps_everyrev =  stepsPerRevolution/(2*PI);
+  float calc_steps = steps_everyrev * angle;
+  _stepper.step(calc_steps);
 
 }
 
