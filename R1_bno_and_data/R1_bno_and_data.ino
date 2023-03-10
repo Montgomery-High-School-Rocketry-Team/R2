@@ -164,10 +164,7 @@ void loop() {
         float alt = bmp.readAltitude(SEALEVELPRESSURE_HPA);
         
          //tiltAngleFromMath
-        // accelX = ax[idxx] ;
-        // accelY = ay[idxx];
-        // accelZ = az[idxx];
-        
+        update_a_s();
         float* v;
         v = accel_to_v();
         float vx = v[0];
@@ -519,7 +516,7 @@ float* accel_to_v(){
   //float integrate(int a, int b, float arr[], float dt);
   int a = 0;
   int b = idxx;
-  float dt = 0.0001;
+  float dt = 0.006;
   // currently i think dt = 0.006
   //float dt = gimedt();
   
@@ -544,7 +541,7 @@ void update_a_s(){
   ax[idxx] = accel.x();
   ay[idxx] = accel.y();    
   az[idxx] = accel.z();
-  
+
 }
 
 
