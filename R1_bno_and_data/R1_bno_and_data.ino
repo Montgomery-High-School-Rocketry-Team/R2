@@ -39,7 +39,8 @@ long startTime;
 int idxx = 0;
 bool Apogee = false;
 //in in seconds
-float GLOB_DT = 0.0145;
+//float GLOB_DT = 0.0145;
+float GLOB_DT = 0.01;
 /******************************************* END -----  DATA COLLECTION SET UP GLOBAL VALS **********************************/
 
 /*********************** START ALGO GLOBAL VALUES ***********************/
@@ -109,7 +110,7 @@ void loop() {
     if(!initQuatFound){
       loop_find_quat_init();
     }else{
-        long T1 = micros();
+        //long T1 = micros();
       
         float timeStep = GLOB_DT;
         imu::Vector<3> accel = bno.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
@@ -145,8 +146,8 @@ void loop() {
         // imu::Quaternion quat = gyroIntedQuat;
         // quat_init = quat;
         // float tiltAngleFromMath = ahrs.tilt(quat);
-        //Serial.println(tiltAngleFromMath);
-        //Serial.println(F("----"));
+        // Serial.println(tiltAngleFromMath);
+        // Serial.println(F("----"));
           
         
 
@@ -156,8 +157,8 @@ void loop() {
          //tiltAngleFromMath
         //update_a_s();
         
-        long T2 = micros();
-        Serial.println(T2-T1);
+        //long T2 = micros();
+       // Serial.println(T2-T1);
         // GLOB_DT = (T2-T1)/1000000;
 
     }
@@ -506,17 +507,17 @@ void BNOinit(){
 }
 
 void loop_find_quat_init(){
-  long T1 = micros();
+  //long T1 = micros();
   quat_init = bno.getQuat();
-  long T2 = micros();
-  Serial.println(T2-T1);
+  //long T2 = micros();
+  //Serial.println(T2-T1);
   //digitalWrite(button,HIGH);
   while (true){
         if (digitalRead(button) == LOW)
         {
             initQuatFound = true;
             // bno.changeToAccGyro();
-            // // bno.set16Grange();
+            bno.set16Grange();
             // bno.set2000dps523HZ();
             // bno.set16Gand1000HZ();
             noTone(buzzer);
