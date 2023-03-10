@@ -39,7 +39,7 @@ long startTime;
 int idxx = 0;
 bool Apogee = false;
 //in in seconds
-float  GLOB_DT = 0.011;
+float GLOB_DT = 0.0145;
 /******************************************* END -----  DATA COLLECTION SET UP GLOBAL VALS **********************************/
 
 /*********************** START ALGO GLOBAL VALUES ***********************/
@@ -102,21 +102,14 @@ void setup(void)
 
     delay(3000);
 
-    startTime = millis();
+    
 }
 
 void loop() {
     if(!initQuatFound){
-      quat_init = bno.getQuat();
-      if(quat_init.x() != 0 && quat_init.y()  != 0 && quat_init.z()  != 0){
-        initQuatFound = true;
-        bno.changeToAccGyro();
-        // bno.set16Grange();
-        bno.set2000dps523HZ();
-        bno.set16Gand1000HZ();
-      }
+      loop_find_quat_init();
     }else{
-        //long T1 = micros();
+        long T1 = micros();
       
         float timeStep = GLOB_DT;
         imu::Vector<3> accel = bno.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
@@ -126,44 +119,34 @@ void loop() {
         float* dataPtr;
         dataPtr = GetData(accel,gyro);
         LogData(dataPtr[0],dataPtr[1],dataPtr[2],dataPtr[3],dataPtr[4],dataPtr[5],dataPtr[6],dataPtr[7],dataPtr[8]);
-      
-        /* Board layout:
-              +----------+
-              |         *| RST   PITCH  ROLL  HEADING
-          ADR |*        *| SCL
-          INT |*        *| SDA     ^            /->
-          PS1 |*        *| GND     |            |
-          PS0 |*        *| 3VO     Y    Z-->    \-X
-              |         *| VIN
-              +----------+
-        */
+        
+        float* v;
+        v = accel_to_v();
+        float vx = v[0];
+        float vy = v[1];
+        float vz = v[2];
 
+        //*****logic****
+        // imu::Quaternion gyroIntedQuat;
+        // if(gyro.magnitude() != 0){
+        //   gyroIntedQuat = ahrs.integrateGyro(gyro, accel, quat_init, timeStep);
+        // }else{
+        //   gyroIntedQuat = quat_init;
 
-        
-      
-        //const float timeStep = (T2-T1)*1e6;
-        //data collection....
-        
-        
-        //logic
-        imu::Quaternion gyroIntedQuat;
-        if(gyro.magnitude() != 0){
-          gyroIntedQuat = ahrs.integrateGyro(gyro, accel, quat_init, timeStep);
-        }else{
-          gyroIntedQuat = quat_init;
-        }
+          
+        // }
+
       
 
-        // imu::Quaternion ASD = bno.getQuat();
-        // float tileAngleFromSensor = ahrs.tilt(ASD);
-        //util.printQuat(ASD);
+        imu::Quaternion ASD = bno.getQuat();
+        float tileAngleFromSensor = ahrs.tilt(ASD);
         // Serial.println(tileAngleFromSensor);
         // Serial.println(F("~~~~~~~~"));
-        imu::Quaternion quat = gyroIntedQuat;
-        quat_init = quat;
-        float tiltAngleFromMath = ahrs.tilt(quat);
-        Serial.println(tiltAngleFromMath);
-        Serial.println(F("----"));
+        // imu::Quaternion quat = gyroIntedQuat;
+        // quat_init = quat;
+        // float tiltAngleFromMath = ahrs.tilt(quat);
+        //Serial.println(tiltAngleFromMath);
+        //Serial.println(F("----"));
           
         
 
@@ -171,14 +154,10 @@ void loop() {
         float alt = altitude[idxx];
         
          //tiltAngleFromMath
-        update_a_s();
-        float* v;
-        v = accel_to_v();
-        float vx = v[0];
-        float vy = v[1];
-        float vz = v[2];
-
-        // long T2 = micros();
+        //update_a_s();
+        
+        long T2 = micros();
+        Serial.println(T2-T1);
         // GLOB_DT = (T2-T1)/1000000;
 
     }
@@ -367,15 +346,19 @@ void LogData(float accelX, float accelY, float accelZ, float gyroX, float gyroY,
       Serial.println("WRITING TO data.csv - DONE");
       //delay(10000);
       Apogee = true;
+
+      // this global dt is found from uncommenting the code under the else statement
+      // time it takes to run the void loop
+      GLOB_DT = 0.025;
       
     }else if(!Apogee){
       Data[idxx] = data;
       altitude[idxx] = alt;
       // Serial.println(Data[idxx]);
       // Serial.println(idxx);
-      // ax[idxx] = accelX;
-      // ay[idxx] = accelY;
-      // az[idxx] = accelZ;
+      ax[idxx] = accelX;
+      ay[idxx] = accelY;
+      az[idxx] = accelZ;
       idxx ++;
     }else{
       // file = SD.open("data.csv", FILE_WRITE);
@@ -522,6 +505,44 @@ void BNOinit(){
     Serial.println("\n--------------------------------\n");
 }
 
+void loop_find_quat_init(){
+  long T1 = micros();
+  quat_init = bno.getQuat();
+  long T2 = micros();
+  Serial.println(T2-T1);
+  //digitalWrite(button,HIGH);
+  while (true){
+        if (digitalRead(button) == LOW)
+        {
+            initQuatFound = true;
+            // bno.changeToAccGyro();
+            // // bno.set16Grange();
+            // bno.set2000dps523HZ();
+            // bno.set16Gand1000HZ();
+            noTone(buzzer);
+            startTime = millis();
+            break;
+        }
+        if(quat_init.x() != 0 && quat_init.y()  != 0 && quat_init.z()  != 0){
+          Serial.println(ahrs.tilt(quat_init));
+          
+          break;
+        }
+
+  }
+
+  
+
+  // if(quat_init.x() != 0 && quat_init.y()  != 0 && quat_init.z()  != 0){
+  //       initQuatFound = true;
+  //       bno.changeToAccGyro();
+  //       // bno.set16Grange();
+  //       bno.set2000dps523HZ();
+  //       bno.set16Gand1000HZ();
+  // }
+}
+
+
 float* accel_to_v(){
   //float integrate(int a, int b, float arr[], float dt);
   int a = 0;
@@ -557,13 +578,13 @@ void moveStepper(int rpm, float angle){
 
 }
 
-void update_a_s(){
-  imu::Vector<3> accel = bno.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
-  ax[idxx] = accel.x();
-  ay[idxx] = accel.y();    
-  az[idxx] = accel.z();
+// void update_a_s(){
+//   imu::Vector<3> accel = bno.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
+//   ax[idxx] = accel.x();
+//   ay[idxx] = accel.y();    
+//   az[idxx] = accel.z();
 
-}
+// }
 
 
 
