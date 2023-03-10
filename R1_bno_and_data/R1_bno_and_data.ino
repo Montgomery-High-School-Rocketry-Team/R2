@@ -5,7 +5,7 @@
 #include <rocketry_lib.h>
 #include <utility/quat.h>
 #include "Adafruit_BMP3XX.h"
-
+#include <Stepper.h>
 #include <TimeLib.h>
 #include <SPI.h>
 #include "SD.h"
@@ -38,9 +38,16 @@ String *Data = new String[SIZE];
 long startTime;
 int idxx = 0;
 bool Apogee = false;
+//in in seconds
+float  GLOB_DT = 0.011;
 /******************************************* END -----  DATA COLLECTION SET UP GLOBAL VALS **********************************/
 
 /*********************** START ALGO GLOBAL VALUES ***********************/
+
+//**motor stuff**
+const int stepsPerRevolution = 2038;
+Stepper _stepper = Stepper(stepsPerRevolution, 8,9,10,11);
+// **end motor stuff**
 
 /*************** START BNO STUFF***************/
 /* Set the delay between fresh samples */
@@ -64,6 +71,7 @@ AHRS ahrs;
 float ax[SIZE];
 float ay[SIZE];
 float az[SIZE];
+float altitude[SIZE];
 /*
   data[0] = accelX;
   data[1] = accelY;
@@ -84,9 +92,8 @@ void setup(void)
     Serial.begin(115200);
     Wire.setClock(1000000);
     delay(1000);
-    Serial.println("Orientation Sensor Test"); Serial.println("");
+    //Serial.println("Orientation Sensor Test"); Serial.println("");
 
-    //bmp is ACTUALLY ACTUALLY SPI
     BMPinit();
     SDinit();
 
@@ -109,9 +116,9 @@ void loop() {
         bno.set16Gand1000HZ();
       }
     }else{
-        long T1 = micros();
+        //long T1 = micros();
       
-        float timeStep = 0.006;
+        float timeStep = GLOB_DT;
         imu::Vector<3> accel = bno.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
         imu::Vector<3> gyro = bno.getVector(Adafruit_BNO055::VECTOR_GYROSCOPE);
         
@@ -155,13 +162,13 @@ void loop() {
         imu::Quaternion quat = gyroIntedQuat;
         quat_init = quat;
         float tiltAngleFromMath = ahrs.tilt(quat);
-        // Serial.println(tiltAngleFromMath);
-        // Serial.println(F("----"));
+        Serial.println(tiltAngleFromMath);
+        Serial.println(F("----"));
           
         
 
          // Brian's Values
-        float alt = bmp.readAltitude(SEALEVELPRESSURE_HPA);
+        float alt = altitude[idxx];
         
          //tiltAngleFromMath
         update_a_s();
@@ -171,8 +178,9 @@ void loop() {
         float vy = v[1];
         float vz = v[2];
 
-        long T2 = micros();
-        Serial.println(T2-T1);
+        // long T2 = micros();
+        // GLOB_DT = (T2-T1)/1000000;
+
     }
 
     
@@ -180,21 +188,20 @@ void loop() {
 
 
 
-// change to spi later 
 void BMPinit(){
-  // if(!bmp.begin_SPI(BMP_CS)){
-  //   Serial.println(F("bmp failed"));
-  //   while (1) { delay(10); }
-  // }
-  if(!bmp.begin_I2C()){
+  if(!bmp.begin_SPI(BMP_CS)){
     Serial.println(F("bmp failed"));
     while (1) { delay(10); }
   }
+  // if(!bmp.begin_I2C()){
+  //   Serial.println(F("bmp failed"));
+  //   while (1) { delay(10); }
+  // }
   // Set up oversampling and filter initialization
   bmp.setTemperatureOversampling(BMP3_OVERSAMPLING_8X);
   bmp.setPressureOversampling(BMP3_OVERSAMPLING_4X);
   bmp.setIIRFilterCoeff(BMP3_IIR_FILTER_COEFF_3);
-  bmp.setOutputDataRate(BMP3_ODR_100_HZ);
+  bmp.setOutputDataRate(BMP3_ODR_200_HZ);
 }
 
 
@@ -272,9 +279,11 @@ float* GetData(imu::Vector<3> accel, imu::Vector<3> gyro ){
   // float magy = mag.magnetic.y;
   // float magz = mag.magnetic.z;
 
-  float press = bmp.pressure / 100.0;
+  //float press = bmp.pressure / 100.0;
+  float press = 6969;
   float alt = bmp.readAltitude(SEALEVELPRESSURE_HPA);
-  float board_temperature = (bmp.temperature + bno.getTemp())/2;
+  //float board_temperature = (bmp.temperature + bno.getTemp())/2;
+  float board_temperature=6969;
 
 
   float accelX = accel.x();
@@ -361,6 +370,7 @@ void LogData(float accelX, float accelY, float accelZ, float gyroX, float gyroY,
       
     }else if(!Apogee){
       Data[idxx] = data;
+      altitude[idxx] = alt;
       // Serial.println(Data[idxx]);
       // Serial.println(idxx);
       // ax[idxx] = accelX;
@@ -516,9 +526,7 @@ float* accel_to_v(){
   //float integrate(int a, int b, float arr[], float dt);
   int a = 0;
   int b = idxx;
-  float dt = 0.006;
-  // currently i think dt = 0.006
-  //float dt = gimedt();
+  float dt = GLOB_DT;
   
   float vx = ahrs.integrate(a,b,ax,dt);
   float vy = ahrs.integrate(a,b,ay,dt);
@@ -533,6 +541,19 @@ float* accel_to_v(){
 
   return v;
 
+
+}
+
+/*
+moves stepper
+@param angle
+make sure the angle is in radians 
+*/
+void moveStepper(int rpm, float angle){
+  _stepper.setSpeed(rpm);
+  float steps_everyrev =  stepsPerRevolution/(2*PI);
+  float calc_steps = steps_everyrev * angle;
+  _stepper.step(calc_steps);
 
 }
 
