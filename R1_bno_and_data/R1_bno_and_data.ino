@@ -573,12 +573,11 @@ make sure the angle is in radians
 */
 void moveStepper(int rpm, float angle){
   _stepper.setSpeed(rpm);
-  float steps_everyrev =  stepsPerRevolution/(2*PI);
-  float calc_steps = steps_everyrev * angle;
+  float steps_everyrev =  stepsPerRevolution;
+  float calc_steps = steps_everyrev * angle/(2*PI);
   _stepper.step(calc_steps);
 
 }
-
 // void update_a_s(){
 //   imu::Vector<3> accel = bno.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
 //   ax[idxx] = accel.x();
