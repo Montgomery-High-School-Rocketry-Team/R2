@@ -184,6 +184,7 @@ void loop() {
       // Serial.println(T2-T1);
       // GLOB_DT = (T2-T1)/1000000;
       float predApog = 0;
+      // run it after burnout...
       boolean runLoop = false;
       if(runLoop){
               Apogee_PRED_INIT();
