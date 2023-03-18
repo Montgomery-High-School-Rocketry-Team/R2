@@ -41,7 +41,7 @@ long LAST_ANGLE_MODIFIED_TIME = 0;
 
 //************************motor stuff************************
 const int stepsPerRevolution = 2038;
-Stepper _stepper = Stepper(stepsPerRevolution, 8,9,10,11);
+Stepper _stepper =  Stepper(stepsPerRevolution, 5, 6, 7, 8);
 // *************end motor stuff************************
 
 /*************** START BNO STUFF***************/
@@ -139,87 +139,89 @@ void setup(void)
 }
 
 void loop() {
-      quat_init = ahrs.loop_find_quat_init(bno);
-      if(!initQuatFound){
-        startTime = millis();
-        initQuatFound = true;
-      }
-        //long T1 = micros();
-      
-      float timeStep = GLOB_DT;
-      imu::Vector<3> accel = bno.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
-      imu::Vector<3> gyro = bno.getVector(Adafruit_BNO055::VECTOR_GYROSCOPE);
-        
-        
-      float* dataPtr;
-      dataPtr = GetData(accel,gyro);
-
-      float* v;
-      v = accel_to_v();
-      float vx = v[0];
-      float vy = v[1];
-      float vz = v[2];
-
-      imu::Quaternion ASD = bno.getQuat();
-      float tileAngleFromSensor = ahrs.tilt(ASD);
-
-      LogData(dataPtr[0],dataPtr[1],dataPtr[2],dataPtr[3],dataPtr[4],dataPtr[5],dataPtr[6],dataPtr[7],dataPtr[8], tileAngleFromSensor);
-        
-      
-        //*****logic****
-        // imu::Quaternion gyroIntedQuat;
-        // if(gyro.magnitude() != 0){
-        //   gyroIntedQuat = ahrs.integrateGyro(gyro, accel, quat_init, timeStep);
-        // }else{
-        //   gyroIntedQuat = quat_init;
-
+      if(initQuatFound){
+         //long T1 = micros();
           
-        // }
-    
-        if(millis() - LAST_ANGLE_MODIFIED_TIME  >= 500){
-          //20 deg -> 0.349066 rad
-          LAST_ANGLE += 0.349066
-          moveStepper(15, LAST_ANGLE);
-          LAST_ANGLE_MODIFIED_TIME = millis();
-        }
-      
-        // Serial.println(tileAngleFromSensor);
-        // Serial.println(F("~~~~~~~~"));
-        // imu::Quaternion quat = gyroIntedQuat;
-        // quat_init = quat;
-        // float tiltAngleFromMath = ahrs.tilt(quat);
-        // Serial.println(tiltAngleFromMath);
-        // Serial.println(F("----"));
+          float timeStep = GLOB_DT;
+          imu::Vector<3> accel = bno.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
+          imu::Vector<3> gyro = bno.getVector(Adafruit_BNO055::VECTOR_GYROSCOPE);
+            
+            
+          float* dataPtr;
+          dataPtr = GetData(accel,gyro);
+
+          float* v;
+          v = accel_to_v();
+          float vx = v[0];
+          float vy = v[1];
+          float vz = v[2];
+
+          imu::Quaternion ASD = bno.getQuat();
+          float tileAngleFromSensor = ahrs.tilt(ASD);
+
+          LogData(dataPtr[0],dataPtr[1],dataPtr[2],dataPtr[3],dataPtr[4],dataPtr[5],dataPtr[6],dataPtr[7],dataPtr[8], tileAngleFromSensor);
+            
           
-        
+            //*****logic****
+            // imu::Quaternion gyroIntedQuat;
+            // if(gyro.magnitude() != 0){
+            //   gyroIntedQuat = ahrs.integrateGyro(gyro, accel, quat_init, timeStep);
+            // }else{
+            //   gyroIntedQuat = quat_init;
 
-       // Brian's Values
-      float alt = altitude[idxx];
-
-
-
-      
-        
-       //long T2 = micros();
-      // Serial.println(T2-T1);
-      // GLOB_DT = (T2-T1)/1000000;
-      //float predApog = 0;
-      // run it after burnout...
-      // boolean runLoop = false;
-      // if(runLoop){
-      //         Apogee_PRED_INIT();
-      //         for (int n=1; n<iters; n++){
               
+            // }
+        
+            if(millis() - LAST_ANGLE_MODIFIED_TIME  >= 500){
+              //20 deg -> 0.349066 rad
+              LAST_ANGLE += 0.349066;
+              moveStepper(15, LAST_ANGLE);
+              LAST_ANGLE_MODIFIED_TIME = millis();
+            }
+          
+            // Serial.println(tileAngleFromSensor);
+            // Serial.println(F("~~~~~~~~"));
+            // imu::Quaternion quat = gyroIntedQuat;
+            // quat_init = quat;
+            // float tiltAngleFromMath = ahrs.tilt(quat);
+            // Serial.println(tiltAngleFromMath);
+            // Serial.println(F("----"));
+              
+            
+
+          // Brian's Values
+          float alt = altitude[idxx];
+
+
+
+          
+            
+          //long T2 = micros();
+          // Serial.println(T2-T1);
+          // GLOB_DT = (T2-T1)/1000000;
+          //float predApog = 0;
+          // run it after burnout...
+          // boolean runLoop = false;
+          // if(runLoop){
+          //         Apogee_PRED_INIT();
+          //         for (int n=1; n<iters; n++){
                   
-      //           if(iterate(n) == false){ 
-      //                   predApog = sy[n];
-                        
-      //           }
-                
-                
-      //         }
+                      
+          //           if(iterate(n) == false){ 
+          //                   predApog = sy[n];
+                            
+          //           }
                     
-      // }
+                    
+          //         }
+                        
+          // }
+      }else{
+        quat_init = ahrs.loop_find_quat_init(bno);
+        initQuatFound = true;
+        startTime = millis();
+      }
+       
 
 
 
@@ -323,7 +325,7 @@ void LogData(float accelX, float accelY, float accelZ, float gyroX, float gyroY,
     // TODO: i still need to implement the data in the else statement - i think just uncoment the stuff in the else statement and just go from there.....
     // greate
     if(time - startTime > secondsTillApogee*1000 && !Apogee){
-      Serial.println("WRITING TO data.csv");
+      //Serial.println("WRITING TO data.csv");
       
       file = SD.open("data.csv", FILE_WRITE);
      
@@ -332,7 +334,7 @@ void LogData(float accelX, float accelY, float accelZ, float gyroX, float gyroY,
         
       }
       file.close();
-      Serial.println("WRITING TO data.csv - DONE");
+     // Serial.println("WRITING TO data.csv - DONE");
       //delay(10000);
       Apogee = true;
 
@@ -367,7 +369,7 @@ void LogData(float accelX, float accelY, float accelZ, float gyroX, float gyroY,
 
 void BMPinit(){
   if(!bmp.begin_SPI(BMP_CS)){
-    Serial.println(F("bmp failed"));
+    //Serial.println(F("bmp failed"));
     while (1) { delay(10); }
   }
   // if(!bmp.begin_I2C()){
@@ -386,7 +388,7 @@ void BNOinit(){
     if (!bno.begin())
     {
         /* There was a problem detecting the BNO055 ... check your connections */
-        Serial.print("Ooops, no BNO055 detected ... Check your wiring or I2C ADDR!");
+       // Serial.print("Ooops, no BNO055 detected ... Check your wiring or I2C ADDR!");
         while (1);
     }
 
@@ -395,9 +397,9 @@ void BNOinit(){
 
    if (SD.begin(BUILTIN_SDCARD)) {        
         sdavailable = true;        
-        Serial.println("card initialized.");
+        //Serial.println("card initialized.");
         if (SD.exists("data.dat")){
-                Serial.println("Calibration File found");
+               // Serial.println("Calibration File found");
                 
                 dataFile = SD.open("data.dat", FILE_READ);
     
@@ -408,107 +410,79 @@ void BNOinit(){
                 dataFile.read((uint8_t *)&calibrationData, sizeof(calibrationData));
     
                 dataFile.close();  
-                ahrs.displaySensorOffsets(calibrationData);
+              //  ahrs.displaySensorOffsets(calibrationData);
 
                 
     
-                Serial.println("\n\nRestoring Calibration data to the BNO055...");
+               // Serial.println("\n\nRestoring Calibration data to the BNO055...");
                 bno.setSensorOffsets(calibrationData);
     
-                Serial.println("\n\nCalibration data loaded into BNO055");
+               // Serial.println("\n\nCalibration data loaded into BNO055");
                 foundCalib = true;
 
                 /*---------Check Calibration-------------*/ 
                 
-                Serial.println("Checking Offset__________________");           
-                    adafruit_bno055_offsets_t checkOffset;
-                       bno.getSensorOffsets(checkOffset);
+              //  Serial.println("Checking Offset__________________");           
+                adafruit_bno055_offsets_t checkOffset;
+                bno.getSensorOffsets(checkOffset);
     
     
-                ahrs.displaySensorOffsets(checkOffset);
-                Serial.println("\nChecking Offset end_______________"); 
+               // ahrs.displaySensorOffsets(checkOffset);
+              //  Serial.println("\nChecking Offset end_______________"); 
                 /*--------------------------------------*/ 
         }
         else {
-           Serial.println("No Calibration File found");
+          // Serial.println("No Calibration File found");
           }}
     else {
-          Serial.println("Card failed, or not present");
+         // Serial.println("Card failed, or not present");
           }
           
 
     delay(1000);
 
     /* Display some basic information on this sensor */
-    ahrs.displaySensorDetails(bno);
+    //ahrs.displaySensorDetails(bno);
 
     /* Optional: Display current status */
-    ahrs.displaySensorStatus(bno);
+   // ahrs.displaySensorStatus(bno);
 
    //Crystal must be configured AFTER loading calibration data into BNO055.
     bno.setExtCrystalUse(true);
 
     sensors_event_t event;
     bno.getEvent(&event);
-    if (foundCalib){
-        Serial.println("Move sensor slightly to calibrate magnetometers");
-        while (!bno.isFullyCalibrated())
-        {
-            bno.getEvent(&event);
-            ahrs.displayCalStatus(bno);
-            Serial.println(" ");
-            delay(BNO055_SAMPLERATE_DELAY_MS);
-        }
-    }
-    else
-    {
-        Serial.println("Please Calibrate Sensor: ");
-        while (!bno.isFullyCalibrated())
-        {
-            bno.getEvent(&event);
 
-            Serial.print("X: ");
-            Serial.print(event.orientation.x, 4);
-            Serial.print("\tY: ");
-            Serial.print(event.orientation.y, 4);
-            Serial.print("\tZ: ");
-            Serial.print(event.orientation.z, 4);
+    ahrs.play_diff_sound_for_diff_cali(bno, BNO055_SAMPLERATE_DELAY_MS);
 
-            /* Optional: Display calibration status */
-            ahrs.displayCalStatus(bno);
-
-            /* New line for the next sample */
-            Serial.println("");
-
-            /* Wait the specified delay before requesting new data */
-            delay(BNO055_SAMPLERATE_DELAY_MS);
-        }
-    }
-
-    Serial.println("\nFully calibrated!");
-    Serial.println("--------------------------------");
-    Serial.println("Calibration Results: ");
+    // Serial.println("\nFully calibrated!");
+    // Serial.println("--------------------------------");
+    // Serial.println("Calibration Results: ");
     adafruit_bno055_offsets_t newCalib;
     bno.getSensorOffsets(newCalib);
-    ahrs.displaySensorOffsets(newCalib);
+    //ahrs.displaySensorOffsets(newCalib);
 
-    Serial.println("\n\nStoring calibration data to SDCARD...");
+    //Serial.println("\n\nStoring calibration data to SDCARD...");
 /////////////
      if (!sdavailable) {
-        Serial.println("Card failed, or not present");
+       // Serial.println("Card failed, or not present");
         return;
     }
 
-    Serial.println("card initialized.");
+    //Serial.println("card initialized.");
     dataFile = SD.open("data.dat", FILE_WRITE);
 
 
 
     dataFile.write((const uint8_t *)&newCalib, sizeof(newCalib));
     dataFile.close();
-    Serial.println("Data stored to SD-Card.");
-    Serial.println("\n--------------------------------\n");
+
+
+   // Serial.println("Data stored to SD-Card.");
+   // Serial.println("\n--------------------------------\n");
 }
+
+
 
 
 float* accel_to_v(){
