@@ -177,7 +177,9 @@ void loop() {
         // }
     
         if(millis() - LAST_ANGLE_MODIFIED_TIME  >= 500){
-          moveStepper(15, LAST_ANGLE + 20);
+          //20 deg -> 0.349066 rad
+          LAST_ANGLE += 0.349066
+          moveStepper(15, LAST_ANGLE);
           LAST_ANGLE_MODIFIED_TIME = millis();
         }
       
