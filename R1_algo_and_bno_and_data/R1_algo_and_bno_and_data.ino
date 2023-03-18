@@ -31,10 +31,18 @@ float GLOB_DT = 0.01;
 
 /*********************** START ALGO GLOBAL VALUES ***********************/
 
-//**motor stuff**
+// **********************START AIR BREAKS **********************
+
+float LAST_ANGLE = 0;
+long LAST_ANGLE_MODIFIED_TIME = 0;
+
+//********************** END AIR BREAKS **********************
+
+
+//************************motor stuff************************
 const int stepsPerRevolution = 2038;
 Stepper _stepper = Stepper(stepsPerRevolution, 8,9,10,11);
-// **end motor stuff**
+// *************end motor stuff************************
 
 /*************** START BNO STUFF***************/
 /* Set the delay between fresh samples */
@@ -145,14 +153,19 @@ void loop() {
         
       float* dataPtr;
       dataPtr = GetData(accel,gyro);
-      LogData(dataPtr[0],dataPtr[1],dataPtr[2],dataPtr[3],dataPtr[4],dataPtr[5],dataPtr[6],dataPtr[7],dataPtr[8]);
-        
+
       float* v;
       v = accel_to_v();
       float vx = v[0];
       float vy = v[1];
       float vz = v[2];
 
+      imu::Quaternion ASD = bno.getQuat();
+      float tileAngleFromSensor = ahrs.tilt(ASD);
+
+      LogData(dataPtr[0],dataPtr[1],dataPtr[2],dataPtr[3],dataPtr[4],dataPtr[5],dataPtr[6],dataPtr[7],dataPtr[8], tileAngleFromSensor);
+        
+      
         //*****logic****
         // imu::Quaternion gyroIntedQuat;
         // if(gyro.magnitude() != 0){
@@ -162,11 +175,12 @@ void loop() {
 
           
         // }
-
+    
+        if(millis() - LAST_ANGLE_MODIFIED_TIME  >= 500){
+          moveStepper(15, LAST_ANGLE + 20);
+          LAST_ANGLE_MODIFIED_TIME = millis();
+        }
       
-
-      imu::Quaternion ASD = bno.getQuat();
-      float tileAngleFromSensor = ahrs.tilt(ASD);
         // Serial.println(tileAngleFromSensor);
         // Serial.println(F("~~~~~~~~"));
         // imu::Quaternion quat = gyroIntedQuat;
@@ -179,49 +193,39 @@ void loop() {
 
        // Brian's Values
       float alt = altitude[idxx];
+
+
+
+      
         
        //long T2 = micros();
       // Serial.println(T2-T1);
       // GLOB_DT = (T2-T1)/1000000;
-      float predApog = 0;
+      //float predApog = 0;
       // run it after burnout...
-      boolean runLoop = false;
-      if(runLoop){
-              Apogee_PRED_INIT();
-              for (int n=1; n<iters; n++){
+      // boolean runLoop = false;
+      // if(runLoop){
+      //         Apogee_PRED_INIT();
+      //         for (int n=1; n<iters; n++){
               
                   
-                if(iterate(n) == false){ 
-                        predApog = sy[n];
+      //           if(iterate(n) == false){ 
+      //                   predApog = sy[n];
                         
-                }
+      //           }
                 
                 
-              }
+      //         }
                     
-      }
+      // }
+
+
+
  }
 
     
 
 
-
-
-void BMPinit(){
-  if(!bmp.begin_SPI(BMP_CS)){
-    Serial.println(F("bmp failed"));
-    while (1) { delay(10); }
-  }
-  // if(!bmp.begin_I2C()){
-  //   Serial.println(F("bmp failed"));
-  //   while (1) { delay(10); }
-  // }
-  // Set up oversampling and filter initialization
-  bmp.setTemperatureOversampling(BMP3_OVERSAMPLING_8X);
-  bmp.setPressureOversampling(BMP3_OVERSAMPLING_4X);
-  bmp.setIIRFilterCoeff(BMP3_IIR_FILTER_COEFF_3);
-  bmp.setOutputDataRate(BMP3_ODR_200_HZ);
-}
 
 
 float* GetData(imu::Vector<3> accel, imu::Vector<3> gyro ){
@@ -276,7 +280,7 @@ float* GetData(imu::Vector<3> accel, imu::Vector<3> gyro ){
 	return data; //address of structure member returned
 }
 
-void LogData(float accelX, float accelY, float accelZ, float gyroX, float gyroY, float gyroZ, float board_temperature, float press, float alt){
+void LogData(float accelX, float accelY, float accelZ, float gyroX, float gyroY, float gyroZ, float board_temperature, float press, float alt, float angle){
     
     // long T1 = micros();
     
@@ -309,6 +313,7 @@ void LogData(float accelX, float accelY, float accelZ, float gyroX, float gyroY,
     data.concat(",");
     data.concat(String(alt,0));
     data.concat(",");
+    data.concat(String(angle,3));
 
 
     /// BIG ERROR - I NEED TO MAKE SURE THE  DATA [ ] ARRAY IS LARGE ENOUGH AND THEN CHECK IF THE SIZE==IDX OR SMTH, THEN I NEED TO FIND A WAY TO DELETE/CLEAR THE ARRAY OR DATA[] = [] or smth
@@ -356,6 +361,22 @@ void LogData(float accelX, float accelY, float accelZ, float gyroX, float gyroY,
     // Serial.println(T2-T1);
 
 
+}
+
+void BMPinit(){
+  if(!bmp.begin_SPI(BMP_CS)){
+    Serial.println(F("bmp failed"));
+    while (1) { delay(10); }
+  }
+  // if(!bmp.begin_I2C()){
+  //   Serial.println(F("bmp failed"));
+  //   while (1) { delay(10); }
+  // }
+  // Set up oversampling and filter initialization
+  bmp.setTemperatureOversampling(BMP3_OVERSAMPLING_8X);
+  bmp.setPressureOversampling(BMP3_OVERSAMPLING_4X);
+  bmp.setIIRFilterCoeff(BMP3_IIR_FILTER_COEFF_3);
+  bmp.setOutputDataRate(BMP3_ODR_200_HZ);
 }
 
 void BNOinit(){
