@@ -56,7 +56,7 @@ File dataFile;
 
 bool initQuatFound = false;
 imu::Quaternion quat_init;
-AHRS ahrs;
+AHRS ahrs(SEALEVELPRESSURE_HPA);
 //ahrsUtil::QuatUtil util = ahrsUtil::QuatUtil();
 /***************  END BNO STUFF***************/
 
@@ -136,154 +136,82 @@ void setup(void)
     BNOinit();
     bno.restoreDefults();
     
+    quat_init = ahrs.loop_find_quat_init(bno);
+    ahrs.before_launch_detection(bno,bmp);
+
+    startTime = millis();
 }
 
 void loop() {
-      if(initQuatFound){
-         //long T1 = micros();
-          
-          float timeStep = GLOB_DT;
-          imu::Vector<3> accel = bno.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
-          imu::Vector<3> gyro = bno.getVector(Adafruit_BNO055::VECTOR_GYROSCOPE);
-            
-            
-          float* dataPtr;
-          dataPtr = GetData(accel,gyro);
+    imu::Vector<3> accel = bno.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
+    imu::Vector<3> gyro = bno.getVector(Adafruit_BNO055::VECTOR_GYROSCOPE);
+      
 
-          float* v;
-          v = accel_to_v();
-          float vx = v[0];
-          float vy = v[1];
-          float vz = v[2];
+    float* dataPtr;
+    dataPtr = ahrs.GetData(accel,gyro, bno, bmp);
 
-          imu::Quaternion ASD = bno.getQuat();
-          float tileAngleFromSensor = ahrs.tilt(ASD);
+    float* v;
+    v = accel_to_v();
+    // float vx = v[0];
+    // float vy = v[1];
+    // float vz = v[2];
 
-          LogData(dataPtr[0],dataPtr[1],dataPtr[2],dataPtr[3],dataPtr[4],dataPtr[5],dataPtr[6],dataPtr[7],dataPtr[8], tileAngleFromSensor);
-            
-          
-            //*****logic****
-            // imu::Quaternion gyroIntedQuat;
-            // if(gyro.magnitude() != 0){
-            //   gyroIntedQuat = ahrs.integrateGyro(gyro, accel, quat_init, timeStep);
-            // }else{
-            //   gyroIntedQuat = quat_init;
+    imu::Quaternion ASD = bno.getQuat();
+    float tileAngleFromSensor = ahrs.tilt(ASD);
 
-              
-            // }
+    LogData(dataPtr[0],dataPtr[1],dataPtr[2],dataPtr[3],dataPtr[4],dataPtr[5],dataPtr[6],dataPtr[7],dataPtr[8], tileAngleFromSensor);
+    
+    float alt = altitude[idxx];
+    
+      //*****logic****
+      // imu::Quaternion gyroIntedQuat;
+      // if(gyro.magnitude() != 0){
+      //   gyroIntedQuat = ahrs.integrateGyro(gyro, accel, quat_init, timeStep);
+      // }else{
+      //   gyroIntedQuat = quat_init;
+
         
-            if(millis() - LAST_ANGLE_MODIFIED_TIME  >= 500){
-              //20 deg -> 0.349066 rad
-              LAST_ANGLE += 0.349066;
-              moveStepper(15, LAST_ANGLE);
-              LAST_ANGLE_MODIFIED_TIME = millis();
-            }
-          
-            // Serial.println(tileAngleFromSensor);
-            // Serial.println(F("~~~~~~~~"));
-            // imu::Quaternion quat = gyroIntedQuat;
-            // quat_init = quat;
-            // float tiltAngleFromMath = ahrs.tilt(quat);
-            // Serial.println(tiltAngleFromMath);
-            // Serial.println(F("----"));
-              
-            
-
-          // Brian's Values
-          float alt = altitude[idxx];
-
-
-
-          
-            
-          //long T2 = micros();
-          // Serial.println(T2-T1);
-          // GLOB_DT = (T2-T1)/1000000;
-          //float predApog = 0;
-          // run it after burnout...
-          // boolean runLoop = false;
-          // if(runLoop){
-          //         Apogee_PRED_INIT();
-          //         for (int n=1; n<iters; n++){
-                  
-                      
-          //           if(iterate(n) == false){ 
-          //                   predApog = sy[n];
-                            
-          //           }
-                    
-                    
-          //         }
-                        
-          // }
-      }else{
-        quat_init = ahrs.loop_find_quat_init(bno);
-        initQuatFound = true;
-        startTime = millis();
+      // }
+  
+      // TODO: work on this
+      if(millis() - LAST_ANGLE_MODIFIED_TIME  >= 500){
+        //20 deg -> 0.349066 rad
+        LAST_ANGLE += 0.349066;
+        moveStepper(15, LAST_ANGLE);
+        LAST_ANGLE_MODIFIED_TIME = millis();
       }
-       
+    
+      // Serial.println(tileAngleFromSensor);
+      // Serial.println(F("~~~~~~~~"));
+      // imu::Quaternion quat = gyroIntedQuat;
+      // quat_init = quat;
+      // float tiltAngleFromMath = ahrs.tilt(quat);
+      // Serial.println(tiltAngleFromMath);
+      // Serial.println(F("----"));
+      
 
-
+    //float predApog = 0;
+    // run it after burnout...
+    // boolean runLoop = false;
+    // if(runLoop){
+    //         Apogee_PRED_INIT();
+    //         for (int n=1; n<iters; n++){
+            
+                
+    //           if(iterate(n) == false){ 
+    //                   predApog = sy[n];
+                      
+    //           }
+              
+              
+    //         }
+                  
+    // }
+      
 
  }
 
     
-
-
-
-
-float* GetData(imu::Vector<3> accel, imu::Vector<3> gyro ){
-
-  
-  // We are not doing mag cuz like its so slow and not useful for our algo
-  // sensors_event_t accel;
-  // sensors_event_t gyro;
-  // sensors_event_t temp;
-  // sox.getEvent(&accel, &gyro, &temp);
-
-  //   //uTesla
-  // sensors_event_t mag; 
-  // lis3mdl.getEvent(&mag);
-  // float magx = mag.magnetic.x;
-  // float magy = mag.magnetic.y;
-  // float magz = mag.magnetic.z;
-
-  //float press = bmp.pressure / 100.0;
-  float press = 6969;
-  float alt = bmp.readAltitude(SEALEVELPRESSURE_HPA);
-  //float board_temperature = (bmp.temperature + bno.getTemp())/2;
-  float board_temperature=bno.getTemp();
-
-
-  float accelX = accel.x();
-  float accelY = accel.y();
-  float accelZ = accel.z();
-
-  
-
-  float gyroX = gyro.x();
-  float gyroY = gyro.y();
-  float gyroZ = gyro.z();
-
-  static float data[9];
-
-  data[0] = accelX;
-  data[1] = accelY;
-  data[2] = accelZ;
-  data[3] = gyroX;
-  data[4] = gyroY;
-  data[5] = gyroZ;
-  data[6] = board_temperature; //magx
-  data[7] = press; //magy
-  data[8] = alt; //magz
-  // data[9] = board_temperature;
-  // data[10] = press;
-  // data[11] = alt;
-
-
-	return data; //address of structure member returned
-}
-
 void LogData(float accelX, float accelY, float accelZ, float gyroX, float gyroY, float gyroZ, float board_temperature, float press, float alt, float angle){
     
     // long T1 = micros();
