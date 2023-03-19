@@ -59,7 +59,7 @@ AHRS ahrs(SEALEVELPRESSURE_HPA);
 //ahrsUtil::QuatUtil util = ahrsUtil::QuatUtil();
 /***************  END BNO STUFF***************/
 
-/*************** START APOGEE PRED STUFF***************/
+/*************** START BRIAN STUFF***************/
 // determine size later, i think we go with the algo's stuff
 // OOPSP NVM
 float axx[SIZE];
@@ -67,59 +67,7 @@ float ayy[SIZE];
 float azz[SIZE];
 float altitude[SIZE];
 
-
-/***************  END APOGEE PRED STUFF***************/
-
-/* BRIAN'S ALGO */
-
-
-
-// Global Constants - Do not change
-const float R = 8.314462618;     
-const float M = 0.0289652;
-//-----------------------------------------------//
-// Global Evniornment Variables - User Set at Launch Site
-const float g = 9.801;       // Graviational Acceleration at launch site (m/s^2)
-const float T = 293.15;      // Temperature at launch site (K [C + 273.15])
-const float rho = 101325;    // Air pressure at launch site (Pa)
-
-const float density = (rho * M) / (R * T);     // Air density (kg/m^3)
-
-//-----------------------------------------------//
-// Global Rocket Characteristic Variables - User Set 
-const float m = 0.4711;               // Mass of rocket in coast phase (kg)
-const float area_cm2 = 25.88;         // Characterstic area of rocket or frontal area (cm^2)
-const float A = area_cm2 * 0.0001;    // Characterstic area of rocket (m^2)
-const float cd = 0.435;               // Drag Coefficient, Dimensionless
-const float C = 0.5 * cd * A * density;         // Drag constant (for cv^2 term)
-// print(C)
-
-//-----------------------------------------------//
-
-
-// Initial State of Simulation - User Set - Set to immediately after burnout as default
-float s0 = 45.36;    // Initial position (m)
-float v0 = 95.84;      // Initial velocity (m/s)
-float theta0 = 17.98;      // Initial angle from vertical (degrees)
-float timestep = 0.02;    // Timestep of simulation (s)
-int iters = 700;
-
-float arr[1000];
-float sx[1000];
-float sy[1000];
-float vx[1000];
-float vy[1000];
-float ax[1000];
-float ay[1000];
-float t[1000];
-
-
-// *END BRIANS ALGO /
-
-
-
-
-
+/*************** END BRIAN STUFF***************/
 
 /*********************** END ALGO GLOBAL VALUES ***********************/
 
@@ -176,6 +124,7 @@ void loop() {
       if(millis() - LAST_ANGLE_MODIFIED_TIME  >= 500){
         //20 deg -> 0.349066 rad
         LAST_ANGLE += 0.349066;
+        // rpm and then angle
         moveStepper(15, LAST_ANGLE);
         LAST_ANGLE_MODIFIED_TIME = millis();
       }
@@ -385,8 +334,8 @@ void BNOinit(){
     // Serial.println("\nFully calibrated!");
     // Serial.println("--------------------------------");
     // Serial.println("Calibration Results: ");
-    adafruit_bno055_offsets_t newCalib;
-    bno.getSensorOffsets(newCalib);
+    // adafruit_bno055_offsets_t newCalib;
+    // bno.getSensorOffsets(newCalib);
     //ahrs.displaySensorOffsets(newCalib);
 
     //Serial.println("\n\nStoring calibration data to SDCARD...");
@@ -445,55 +394,4 @@ void moveStepper(int rpm, float angle){
   _stepper.step(calc_steps);
 
 }
-
-
-
-
-
-float diff_vx(float vxc, float vyc){
-  return -C/m * ahrs.sqrt10(vxc*vxc + vyc*vxc) * vxc;
-}
-
-float diff_vy(float vxc, float vyc){
-  return -g - (C/m * ahrs.sqrt10(vxc*vxc + vyc*vyc) * vyc);
-}
-
-void Apogee_PRED_INIT(){
-   float vx0 = sin(theta0*1000 / 57296) * v0;
-   float vy0 = cos(theta0*1000 / 57296) * v0;
-   float t0 = 0;
-   t[0] = t0;
-   vx[0] = vx0;
-   vy[0]=vy0;
-   sx[0]=0;
-   sy[0]=s0;
-   ax[0]=0;
-   ay[0]=0;
-}
-
-
-boolean iterate(int n){
-    float vx_dot = diff_vx(vx[n-1], vy[n-1]);
-    float vy_dot = diff_vy(vx[n-1], vy[n-1]);
-    float delta_vx = vx_dot * timestep;
-    float delta_vy = vy_dot * timestep;
-    float delta_sx = (2 * vx[n-1] + delta_vx) / 2 * timestep;
-    float delta_sy = (2 * vy[n-1] + delta_vy) / 2 * timestep;
-    t[n] = t[n-1] + timestep;
-    vx[n] = vx[n-1] + delta_vx;
-    vy[n] = vy[n-1] + delta_vy;
-    sx[n] = sx[n-1] + delta_sx;
-    sy[n] = sy[n-1] + delta_sy;
-    ax[n] = vx_dot;
-    ay[n] = vy_dot;
-    
-    if(vy[n-1] > 0){
-      return true;
-    }else{
-      return false; 
-    }
-        
-}
-
-
 
