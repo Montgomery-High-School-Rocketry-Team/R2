@@ -136,25 +136,7 @@ void loop() {
       // float tiltAngleFromMath = ahrs.tilt(quat);
       // Serial.println(tiltAngleFromMath);
       // Serial.println(F("----"));
-      
-
-    //float predApog = 0;
-    // run it after burnout...
-    // boolean runLoop = false;
-    // if(runLoop){
-    //         Apogee_PRED_INIT();
-    //         for (int n=1; n<iters; n++){
-            
-                
-    //           if(iterate(n) == false){ 
-    //                   predApog = sy[n];
-                      
-    //           }
-              
-              
-    //         }
-                  
-    // }
+    
       
 
  }
