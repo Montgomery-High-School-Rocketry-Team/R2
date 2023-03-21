@@ -316,8 +316,8 @@ void BNOinit(){
     // Serial.println("\nFully calibrated!");
     // Serial.println("--------------------------------");
     // Serial.println("Calibration Results: ");
-    // adafruit_bno055_offsets_t newCalib;
-    // bno.getSensorOffsets(newCalib);
+    adafruit_bno055_offsets_t newCalib;
+    bno.getSensorOffsets(newCalib);
     //ahrs.displaySensorOffsets(newCalib);
 
     //Serial.println("\n\nStoring calibration data to SDCARD...");
