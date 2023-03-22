@@ -87,6 +87,7 @@ void setup(void)
     ahrs.before_launch_detection(bno,bmp);
 
     startTime = millis();
+    LAST_ANGLE_MODIFIED_TIME = startTime;
 }
 
 void loop() {
@@ -121,21 +122,17 @@ void loop() {
       // }
   
       // TODO: work on this
-      if(millis() - LAST_ANGLE_MODIFIED_TIME  >= 500){
+      //in millis
+      if(millis() - LAST_ANGLE_MODIFIED_TIME  >= 5000){
         //20 deg -> 0.349066 rad
         LAST_ANGLE += 0.349066;
         // rpm and then angle
         moveStepper(15, LAST_ANGLE);
         LAST_ANGLE_MODIFIED_TIME = millis();
       }
+      
     
-      // Serial.println(tileAngleFromSensor);
-      // Serial.println(F("~~~~~~~~"));
-      // imu::Quaternion quat = gyroIntedQuat;
-      // quat_init = quat;
-      // float tiltAngleFromMath = ahrs.tilt(quat);
-      // Serial.println(tiltAngleFromMath);
-      // Serial.println(F("----"));
+      
     
       
 
