@@ -34,6 +34,7 @@ float GLOB_DT = 0.01;
 
 float LAST_ANGLE = 0;
 long LAST_ANGLE_MODIFIED_TIME = 0;
+float GROUND_ALT = 0;
 
 //********************** END AIR BREAKS **********************
 
@@ -84,6 +85,9 @@ void setup(void)
     bno.restoreDefults();
     
     quat_init = ahrs.loop_find_quat_init(bno);
+
+    GROUND_ALT = ahrs.get_ground_alt(bmp);
+
     ahrs.before_launch_detection(bno,bmp);
 
     startTime = millis();
