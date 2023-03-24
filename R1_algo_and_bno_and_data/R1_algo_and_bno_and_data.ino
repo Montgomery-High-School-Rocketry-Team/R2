@@ -215,7 +215,7 @@ void BNOinit(){
         while (1);
     }
 
-    bool foundCalib = false;
+    //bool foundCalib = false;
     bool sdavailable = false;
 
    if (SD.begin(BUILTIN_SDCARD)) {        
@@ -241,7 +241,7 @@ void BNOinit(){
                 bno.setSensorOffsets(calibrationData);
     
                // Serial.println("\n\nCalibration data loaded into BNO055");
-                foundCalib = true;
+                //foundCalib = true;
 
                 /*---------Check Calibration-------------*/ 
                 
