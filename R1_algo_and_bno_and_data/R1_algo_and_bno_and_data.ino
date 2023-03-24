@@ -75,9 +75,7 @@ void setup(void)
     
     quat_init = ahrs.loop_find_quat_init(bno);
 
-    //GROUND_ALT = ahrs.get_ground_alt(bmp);
-
-    ahrs.before_launch_detection(bno,bmp);
+    //ahrs.before_launch_detection(bno,bmp);
 
     startTime = millis();
 }
@@ -104,7 +102,7 @@ void loop() {
     float alt = altitude[idxx];
 
     idxx = ahrs.motor_logic(startTime, secondsTillApogee, Data, idxx, alt,bno,bmp);
-    
+
  }
 
     
