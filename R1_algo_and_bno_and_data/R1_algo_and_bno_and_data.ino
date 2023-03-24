@@ -31,10 +31,7 @@ float GLOB_DT = 0.01;
 /*********************** START ALGO GLOBAL VALUES ***********************/
 
 
-//************************motor stuff************************
-const int stepsPerRevolution = 2038;
-Stepper _stepper =  Stepper(stepsPerRevolution, 5, 6, 7, 8);
-// *************end motor stuff************************
+
 
 /*************** START BNO STUFF***************/
 /* Set the delay between fresh samples */
@@ -341,19 +338,6 @@ float* accel_to_v(){
 
   return v;
 
-
-}
-
-/*
-moves stepper
-@param angle
-make sure the angle is in radians 
-*/
-void moveStepper(int rpm, float angle){
-  _stepper.setSpeed(rpm);
-  float steps_everyrev =  stepsPerRevolution;
-  float calc_steps = steps_everyrev * angle/(2*PI);
-  _stepper.step(calc_steps);
 
 }
 
