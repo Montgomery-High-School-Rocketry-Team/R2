@@ -30,13 +30,6 @@ float GLOB_DT = 0.01;
 
 /*********************** START ALGO GLOBAL VALUES ***********************/
 
-// **********************START AIR BREAKS **********************
-
-float LAST_ANGLE = 0;
-float GROUND_ALT = 0;
-
-//********************** END AIR BREAKS **********************
-
 
 //************************motor stuff************************
 const int stepsPerRevolution = 2038;
@@ -116,10 +109,7 @@ void loop() {
       // TODO: work on this
       //in millis
 
-    //20 deg -> 0.349066 rad
-    LAST_ANGLE += 0.349066;
-
-    idxx = ahrs.motor_logic(startTime, secondsTillApogee, Data, idxx, alt, LAST_ANGLE);
+    idxx = ahrs.motor_logic(startTime, secondsTillApogee, Data, idxx, alt,bno,bmp);
     
     
     
