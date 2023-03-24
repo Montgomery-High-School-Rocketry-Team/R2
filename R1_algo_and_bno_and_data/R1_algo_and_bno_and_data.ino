@@ -123,6 +123,8 @@ void loop() {
   
       // TODO: work on this
       //in millis
+
+      // i think i can like make this at xxx alt change it cuz that way its easier to modify 
       if(millis() - LAST_ANGLE_MODIFIED_TIME  >= 5000){
         //20 deg -> 0.349066 rad
         LAST_ANGLE += 0.349066;
