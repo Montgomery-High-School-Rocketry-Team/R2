@@ -33,7 +33,6 @@ float GLOB_DT = 0.01;
 // **********************START AIR BREAKS **********************
 
 float LAST_ANGLE = 0;
-long LAST_ANGLE_MODIFIED_TIME = 0;
 float GROUND_ALT = 0;
 
 //********************** END AIR BREAKS **********************
@@ -86,12 +85,11 @@ void setup(void)
     
     quat_init = ahrs.loop_find_quat_init(bno);
 
-    GROUND_ALT = ahrs.get_ground_alt(bmp);
+    //GROUND_ALT = ahrs.get_ground_alt(bmp);
 
     ahrs.before_launch_detection(bno,bmp);
 
     startTime = millis();
-    LAST_ANGLE_MODIFIED_TIME = startTime;
 }
 
 void loop() {
@@ -114,29 +112,17 @@ void loop() {
     LogData(dataPtr[0],dataPtr[1],dataPtr[2],dataPtr[3],dataPtr[4],dataPtr[5],dataPtr[6],dataPtr[7],dataPtr[8], tileAngleFromSensor);
     
     float alt = altitude[idxx];
-    
-      //*****logic****
-      // imu::Quaternion gyroIntedQuat;
-      // if(gyro.magnitude() != 0){
-      //   gyroIntedQuat = ahrs.integrateGyro(gyro, accel, quat_init, timeStep);
-      // }else{
-      //   gyroIntedQuat = quat_init;
 
-        
-      // }
-  
       // TODO: work on this
       //in millis
 
-      // i think i can like make this at xxx alt change it cuz that way its easier to modify 
-      if(millis() - LAST_ANGLE_MODIFIED_TIME  >= 5000){
-        //20 deg -> 0.349066 rad
-        LAST_ANGLE += 0.349066;
-        // rpm and then angle
-        moveStepper(15, LAST_ANGLE);
-        LAST_ANGLE_MODIFIED_TIME = millis();
-      }
-      
+    //20 deg -> 0.349066 rad
+    LAST_ANGLE += 0.349066;
+
+    idxx = ahrs.motor_logic(startTime, secondsTillApogee, Data, idxx, alt, LAST_ANGLE);
+    
+    
+    
     
       
     
@@ -213,6 +199,7 @@ void LogData(float accelX, float accelY, float accelZ, float gyroX, float gyroY,
       azz[idxx] = accelZ;
       idxx ++;
     }else{
+      
       // file = SD.open("data.csv", FILE_WRITE);
       // file.println(data);
       // file.close();
