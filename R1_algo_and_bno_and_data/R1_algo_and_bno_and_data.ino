@@ -103,18 +103,8 @@ void loop() {
     
     float alt = altitude[idxx];
 
-      // TODO: work on this
-      //in millis
-
     idxx = ahrs.motor_logic(startTime, secondsTillApogee, Data, idxx, alt,bno,bmp);
     
-    
-    
-    
-      
-    
-      
-
  }
 
     
