@@ -18,8 +18,8 @@ File file;
 Adafruit_BMP3XX bmp;
 // seconds till apogee * targetted packaets per sec
 const int secondsTillApogee = 10;
-const int SIZE =  secondsTillApogee*400;
-String *Data = new String[SIZE];
+const int SIZE = secondsTillApogee * 400;
+String* Data = new String[SIZE];
 long startTime;
 int idxx = 0;
 bool Apogee = false;
@@ -61,137 +61,131 @@ float altitude[SIZE];
 
 /*********************** END ALGO GLOBAL VALUES ***********************/
 
-void setup(void)
-{
-    Serial.begin(115200);
-    Wire.setClock(1000000);
-    //Serial.println("Orientation Sensor Test"); Serial.println("");
+void setup(void) {
+  Serial.begin(115200);
+  Wire.setClock(1000000);
+  //Serial.println("Orientation Sensor Test"); Serial.println("");
 
-    BMPinit();
-    ahrs.SDinit(BUILTIN_SDCARD);
+  BMPinit();
+  ahrs.SDinit(BUILTIN_SDCARD);
 
-    BNOinit();
-    bno.restoreDefults();
-    
-    quat_init = ahrs.loop_find_quat_init(bno);
+  BNOinit();
+  bno.restoreDefults();
 
-    //ahrs.before_launch_detection(bno,bmp);
+  quat_init = ahrs.loop_find_quat_init(bno);
 
-    startTime = millis();
+  //ahrs.before_launch_detection(bno,bmp);
+
+  startTime = millis();
 }
 
 void loop() {
-    imu::Vector<3> accel = bno.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
-    imu::Vector<3> gyro = bno.getVector(Adafruit_BNO055::VECTOR_GYROSCOPE);
-      
-
-    float* dataPtr;
-    dataPtr = ahrs.GetData(accel,gyro, bno, bmp);
-
-    float* v;
-    v = accel_to_v();
-    // float vx = v[0];
-    // float vy = v[1];
-    // float vz = v[2];
-
-    imu::Quaternion ASD = bno.getQuat();
-    float tileAngleFromSensor = ahrs.tilt(ASD);
-
-    LogData(dataPtr[0],dataPtr[1],dataPtr[2],dataPtr[3],dataPtr[4],dataPtr[5],dataPtr[6],dataPtr[7],dataPtr[8], tileAngleFromSensor);
-    
-    float alt = altitude[idxx];
-
-    idxx = ahrs.motor_logic(startTime, secondsTillApogee, Data, idxx, alt,bno,bmp);
-
- }
-
-    
-void LogData(float accelX, float accelY, float accelZ, float gyroX, float gyroY, float gyroZ, float board_temperature, float press, float alt, float angle){
-    
-    // long T1 = micros();
-    
-    long time = millis();
-    
-    String data = "";
-    data.concat(time);
-    data.concat(",");
-    data.concat(accelX);
-    data.concat(",");
-    data.concat(accelY);
-    data.concat(",");
-    data.concat(accelZ);
-    data.concat(",");
-    data.concat(gyroX);
-    data.concat(",");
-    data.concat(gyroY);
-    data.concat(",");
-    data.concat(gyroZ);
-    data.concat(",");
-    // data.concat(magx);
-    // data.concat(",");
-    // data.concat(magy);
-    // data.concat(",");
-    // data.concat(magz);
-    // data.concat(",");
-    data.concat(String(board_temperature,0));
-    data.concat(",");
-    data.concat(String(press,0));
-    data.concat(",");
-    data.concat(String(alt,0));
-    data.concat(",");
-    data.concat(String(angle,3));
+  imu::Vector<3> accel = bno.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
+  imu::Vector<3> gyro = bno.getVector(Adafruit_BNO055::VECTOR_GYROSCOPE);
 
 
-    /// BIG ERROR - I NEED TO MAKE SURE THE  DATA [ ] ARRAY IS LARGE ENOUGH AND THEN CHECK IF THE SIZE==IDX OR SMTH, THEN I NEED TO FIND A WAY TO DELETE/CLEAR THE ARRAY OR DATA[] = [] or smth
-    // nvm update ^^ 10 minutes later - i think my old code solved this issue by just making a super duper big array that can store all the flight's data until apogee or smth... 
-    // TODO: i still need to implement the data in the else statement - i think just uncoment the stuff in the else statement and just go from there.....
-    // greate
-    if(time - startTime > secondsTillApogee*1000 && !Apogee){
-      //Serial.println("WRITING TO data.csv");
-      
-      file = SD.open("data.csv", FILE_WRITE);
-     
-      for(int i=0; i<idxx; i++ ){
-        file.println(Data[i]);
-        
-      }
-      file.close();
-     // Serial.println("WRITING TO data.csv - DONE");
-      //delay(10000);
-      Apogee = true;
+  float* dataPtr;
+  dataPtr = ahrs.GetData(accel, gyro, bno, bmp);
 
-      // this global dt is found from uncommenting the code under the else statement
-      // time it takes to run the void loop
-      GLOB_DT = 0.025;
-      
-    }else if(!Apogee){
-      Data[idxx] = data;
-      altitude[idxx] = alt;
-      // Serial.println(Data[idxx]);
-      // Serial.println(idxx);
-      axx[idxx] = accelX;
-      ayy[idxx] = accelY;
-      azz[idxx] = accelZ;
-      idxx ++;
-    }else{
-      
-      // file = SD.open("data.csv", FILE_WRITE);
-      // file.println(data);
-      // file.close();
-    
-    }
-    
+  float* v;
+  v = accel_to_v();
+  // float vx = v[0];
+  // float vy = v[1];
+  // float vz = v[2];
 
-    
-    
-    // long T2 = micros();
-    // Serial.println(T2-T1);
+  imu::Quaternion ASD = bno.getQuat();
+  float tiltAngleFromSensor = ahrs.tilt(ASD);
 
+  LogData(dataPtr[0], dataPtr[1], dataPtr[2], dataPtr[3], dataPtr[4], dataPtr[5], dataPtr[6], dataPtr[7], dataPtr[8], tiltAngleFromSensor);
 
+  float alt = altitude[idxx];
+
+  idxx = ahrs.motor_logic(startTime, secondsTillApogee, Data, idxx, alt, bno, bmp);
 }
 
-void BMPinit(){
-  if(!bmp.begin_SPI(BMP_CS)){
+
+void LogData(float accelX, float accelY, float accelZ, float gyroX, float gyroY, float gyroZ, float board_temperature, float press, float alt, float angle) {
+
+  // long T1 = micros();
+
+  long time = millis();
+
+  String data = "";
+  data.concat(time);
+  data.concat(",");
+  data.concat(accelX);
+  data.concat(",");
+  data.concat(accelY);
+  data.concat(",");
+  data.concat(accelZ);
+  data.concat(",");
+  data.concat(gyroX);
+  data.concat(",");
+  data.concat(gyroY);
+  data.concat(",");
+  data.concat(gyroZ);
+  data.concat(",");
+  // data.concat(magx);
+  // data.concat(",");
+  // data.concat(magy);
+  // data.concat(",");
+  // data.concat(magz);
+  // data.concat(",");
+  data.concat(String(board_temperature, 0));
+  data.concat(",");
+  data.concat(String(press, 0));
+  data.concat(",");
+  data.concat(String(alt, 0));
+  data.concat(",");
+  data.concat(String(angle, 3));
+
+
+  /// BIG ERROR - I NEED TO MAKE SURE THE  DATA [ ] ARRAY IS LARGE ENOUGH AND THEN CHECK IF THE SIZE==IDX OR SMTH, THEN I NEED TO FIND A WAY TO DELETE/CLEAR THE ARRAY OR DATA[] = [] or smth
+  // nvm update ^^ 10 minutes later - i think my old code solved this issue by just making a super duper big array that can store all the flight's data until apogee or smth...
+  // TODO: i still need to implement the data in the else statement - i think just uncoment the stuff in the else statement and just go from there.....
+  // greate
+  if (time - startTime > secondsTillApogee * 1000 && !Apogee) {
+    //Serial.println("WRITING TO data.csv");
+
+    file = SD.open("data.csv", FILE_WRITE);
+
+    for (int i = 0; i < idxx; i++) {
+      file.println(Data[i]);
+    }
+    file.close();
+    // Serial.println("WRITING TO data.csv - DONE");
+    //delay(10000);
+    Apogee = true;
+
+    // this global dt is found from uncommenting the code under the else statement
+    // time it takes to run the void loop
+    GLOB_DT = 0.025;
+
+  } else if (!Apogee) {
+    Data[idxx] = data;
+    altitude[idxx] = alt;
+    // Serial.println(Data[idxx]);
+    // Serial.println(idxx);
+    axx[idxx] = accelX;
+    ayy[idxx] = accelY;
+    azz[idxx] = accelZ;
+    idxx++;
+  } else {
+
+    // file = SD.open("data.csv", FILE_WRITE);
+    // file.println(data);
+    // file.close();
+  }
+
+
+
+
+  // long T2 = micros();
+  // Serial.println(T2-T1);
+}
+
+void BMPinit() {
+  if (!bmp.begin_SPI(BMP_CS)) {
     //Serial.println(F("bmp failed"));
     while (1) { delay(10); }
   }
@@ -206,116 +200,115 @@ void BMPinit(){
   bmp.setOutputDataRate(BMP3_ODR_200_HZ);
 }
 
-void BNOinit(){
-      /* Initialise the sensor */
-    if (!bno.begin())
-    {
-        /* There was a problem detecting the BNO055 ... check your connections */
-       // Serial.print("Ooops, no BNO055 detected ... Check your wiring or I2C ADDR!");
-        while (1);
-    }
+void BNOinit() {
+  /* Initialise the sensor */
+  if (!bno.begin()) {
+    /* There was a problem detecting the BNO055 ... check your connections */
+    // Serial.print("Ooops, no BNO055 detected ... Check your wiring or I2C ADDR!");
+    while (1)
+      ;
+  }
 
-    //bool foundCalib = false;
-    bool sdavailable = false;
+  //bool foundCalib = false;
+  bool sdavailable = false;
 
-   if (SD.begin(BUILTIN_SDCARD)) {        
-        sdavailable = true;        
-        //Serial.println("card initialized.");
-        if (SD.exists("data.dat")){
-               // Serial.println("Calibration File found");
-                
-                dataFile = SD.open("data.dat", FILE_READ);
-    
-                adafruit_bno055_offsets_t calibrationData;
-                sensor_t sensor;
-    
-                bno.getSensor(&sensor);
-                dataFile.read((uint8_t *)&calibrationData, sizeof(calibrationData));
-    
-                dataFile.close();  
-              //  ahrs.displaySensorOffsets(calibrationData);
-
-                
-    
-               // Serial.println("\n\nRestoring Calibration data to the BNO055...");
-                bno.setSensorOffsets(calibrationData);
-    
-               // Serial.println("\n\nCalibration data loaded into BNO055");
-                //foundCalib = true;
-
-                /*---------Check Calibration-------------*/ 
-                
-              //  Serial.println("Checking Offset__________________");           
-                adafruit_bno055_offsets_t checkOffset;
-                bno.getSensorOffsets(checkOffset);
-    
-    
-               // ahrs.displaySensorOffsets(checkOffset);
-              //  Serial.println("\nChecking Offset end_______________"); 
-                /*--------------------------------------*/ 
-        }
-        else {
-          // Serial.println("No Calibration File found");
-          }}
-    else {
-         // Serial.println("Card failed, or not present");
-          }
-          
-
-    delay(1000);
-
-    /* Display some basic information on this sensor */
-    //ahrs.displaySensorDetails(bno);
-
-    /* Optional: Display current status */
-   // ahrs.displaySensorStatus(bno);
-
-   //Crystal must be configured AFTER loading calibration data into BNO055.
-    bno.setExtCrystalUse(true);
-
-    sensors_event_t event;
-    bno.getEvent(&event);
-
-    ahrs.play_diff_sound_for_diff_cali(bno, BNO055_SAMPLERATE_DELAY_MS);
-
-    // Serial.println("\nFully calibrated!");
-    // Serial.println("--------------------------------");
-    // Serial.println("Calibration Results: ");
-    adafruit_bno055_offsets_t newCalib;
-    bno.getSensorOffsets(newCalib);
-    //ahrs.displaySensorOffsets(newCalib);
-
-    //Serial.println("\n\nStoring calibration data to SDCARD...");
-/////////////
-     if (!sdavailable) {
-       // Serial.println("Card failed, or not present");
-        return;
-    }
-
+  if (SD.begin(BUILTIN_SDCARD)) {
+    sdavailable = true;
     //Serial.println("card initialized.");
-    dataFile = SD.open("data.dat", FILE_WRITE);
+    if (SD.exists("data.dat")) {
+      // Serial.println("Calibration File found");
+
+      dataFile = SD.open("data.dat", FILE_READ);
+
+      adafruit_bno055_offsets_t calibrationData;
+      sensor_t sensor;
+
+      bno.getSensor(&sensor);
+      dataFile.read((uint8_t*)&calibrationData, sizeof(calibrationData));
+
+      dataFile.close();
+      //  ahrs.displaySensorOffsets(calibrationData);
 
 
 
-    dataFile.write((const uint8_t *)&newCalib, sizeof(newCalib));
-    dataFile.close();
+      // Serial.println("\n\nRestoring Calibration data to the BNO055...");
+      bno.setSensorOffsets(calibrationData);
+
+      // Serial.println("\n\nCalibration data loaded into BNO055");
+      //foundCalib = true;
+
+      /*---------Check Calibration-------------*/
+
+      //  Serial.println("Checking Offset__________________");
+      adafruit_bno055_offsets_t checkOffset;
+      bno.getSensorOffsets(checkOffset);
 
 
-   // Serial.println("Data stored to SD-Card.");
-   // Serial.println("\n--------------------------------\n");
+      // ahrs.displaySensorOffsets(checkOffset);
+      //  Serial.println("\nChecking Offset end_______________");
+      /*--------------------------------------*/
+    } else {
+      // Serial.println("No Calibration File found");
+    }
+  } else {
+    // Serial.println("Card failed, or not present");
+  }
+
+
+  delay(1000);
+
+  /* Display some basic information on this sensor */
+  //ahrs.displaySensorDetails(bno);
+
+  /* Optional: Display current status */
+  // ahrs.displaySensorStatus(bno);
+
+  //Crystal must be configured AFTER loading calibration data into BNO055.
+  bno.setExtCrystalUse(true);
+
+  sensors_event_t event;
+  bno.getEvent(&event);
+
+  ahrs.play_diff_sound_for_diff_cali(bno, BNO055_SAMPLERATE_DELAY_MS);
+
+  // Serial.println("\nFully calibrated!");
+  // Serial.println("--------------------------------");
+  // Serial.println("Calibration Results: ");
+  adafruit_bno055_offsets_t newCalib;
+  bno.getSensorOffsets(newCalib);
+  //ahrs.displaySensorOffsets(newCalib);
+
+  //Serial.println("\n\nStoring calibration data to SDCARD...");
+  /////////////
+  if (!sdavailable) {
+    // Serial.println("Card failed, or not present");
+    return;
+  }
+
+  //Serial.println("card initialized.");
+  dataFile = SD.open("data.dat", FILE_WRITE);
+
+
+
+  dataFile.write((const uint8_t*)&newCalib, sizeof(newCalib));
+  dataFile.close();
+
+
+  // Serial.println("Data stored to SD-Card.");
+  // Serial.println("\n--------------------------------\n");
 }
 
 
 
 
-float* accel_to_v(){
+float* accel_to_v() {
   int a = 0;
   int b = idxx;
   float dt = GLOB_DT;
-  
-  float vx = ahrs.integrate(a,b,axx,dt);
-  float vy = ahrs.integrate(a,b,ayy,dt);
-  float vz = ahrs.integrate(a,b,azz,dt);
+
+  float vx = ahrs.integrate(a, b, axx, dt);
+  float vy = ahrs.integrate(a, b, ayy, dt);
+  float vz = ahrs.integrate(a, b, azz, dt);
 
   //ahrs.sqrt10(const double number)
   // |v|  = sqrt10(vx*vx + vy*vy + vz*vz);
@@ -325,7 +318,4 @@ float* accel_to_v(){
   v[2] = vz;
 
   return v;
-
-
 }
-
