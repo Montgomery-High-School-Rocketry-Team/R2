@@ -96,12 +96,9 @@ void loop() {
 
   float* dataPtr;
   dataPtr = ahrs.GetData(accel, gyro, bno, bmp);
-  axx[idxx] = dataPtr[0];
-  ayy[idxx] = dataPtr[1];
-  azz[idxx] = dataPtr[2];
 
   float* v;
-  v = accel_to_v();
+  v = accel_to_v(dataPtr[0], dataPtr[1],dataPtr[2]);
   // float vx = v[0];
   // float vy = v[1];
   // float vz = v[2];
@@ -119,7 +116,7 @@ void loop() {
   long time = millis();
   if (!(time - startTime > secondsTillApogee * 1000)) {
     bool ran = false;
-    if (((15.24 <= alt) && (alt <= 91.44)) && !already_twenty_rotated) {
+    if (!already_twenty_rotated) {
 
       Data[idxx] = "# START MOTOR ROTATE - 20DEG";
       idxx++;
@@ -134,7 +131,7 @@ void loop() {
       already_twenty_rotated = true;
       ran = true;
 
-    } else if (((91.44 <= alt) && (alt <= 182.88)) && !already_forty_rotated) {
+    } else if ( !already_forty_rotated) {
 
       Data[idxx] = "# START MOTOR ROTATE - 40DEG";
       idxx++;
@@ -148,7 +145,7 @@ void loop() {
       already_forty_rotated = true;
       ran = true;
 
-    } else if (((182.88 <= alt) && (alt <= 274.32)) && !already_sixty_rotated) {
+    } else if ( !already_sixty_rotated) {
 
       Data[idxx] = "# START MOTOR ROTATE - 60DEG";
       idxx++;
@@ -161,7 +158,7 @@ void loop() {
       already_sixty_rotated = true;
       ran = true;
 
-    } else if (((274.32 <= alt) && (alt <= 365.76)) && !already_eighty_rotated) {
+    } else if ( !already_eighty_rotated) {
 
       Data[idxx] = "# START MOTOR ROTATE - 80DEG";
       idxx++;
@@ -423,7 +420,11 @@ void BNOinit() {
 
 
 
-float* accel_to_v() {
+float* accel_to_v(float ax,float ay, float az) {
+  
+  axx[idxx] = ax;
+  ayy[idxx] = ay-9.81;
+  azz[idxx] = az;
   int a = 0;
   int b = idxx;
   float dt = GLOB_DT;
@@ -432,13 +433,15 @@ float* accel_to_v() {
   float vy = ahrs.integrate(a, b, ayy, dt);
   float vz = ahrs.integrate(a, b, azz, dt);
 
-  //ahrs.sqrt10(const double number)
   float vv  = ahrs.sqrt10(vx*vx + vy*vy + vz*vz);
-  Serial.println(vv);
+  //Serial.println(vv);
   static float v[3];
   v[0] = vx;
   v[1] = vy;
   v[2] = vz;
-
+  // Serial.println(v[0]);
+  // Serial.println(v[1]);
+  // Serial.println(v[2]);
+  // Serial.println("---");
   return v;
 }

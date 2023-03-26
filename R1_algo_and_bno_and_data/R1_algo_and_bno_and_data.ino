@@ -85,11 +85,9 @@ void loop() {
 
   float* dataPtr;
   dataPtr = ahrs.GetData(accel, gyro, bno, bmp);
-  axx[idxx] = dataPtr[0];
-  ayy[idxx] = dataPtr[1];
-  azz[idxx] = dataPtr[2];
+  
   float* v;
-  v = accel_to_v();
+  v = accel_to_v(dataPtr[0], dataPtr[1],dataPtr[2]);
   // float vx = v[0];
   // float vy = v[1];
   // float vz = v[2];
@@ -292,7 +290,10 @@ void BNOinit() {
 
 
 
-float* accel_to_v() {
+float* accel_to_v(float ax,float ay, float az) {
+  axx[idxx] = ax;
+  ayy[idxx] = ay;
+  azz[idxx] = az;
   int a = 0;
   int b = idxx;
   float dt = GLOB_DT;
