@@ -85,7 +85,9 @@ void loop() {
 
   float* dataPtr;
   dataPtr = ahrs.GetData(accel, gyro, bno, bmp);
-
+  axx[idxx] = dataPtr[0];
+  ayy[idxx] = dataPtr[1];
+  azz[idxx] = dataPtr[2];
   float* v;
   v = accel_to_v();
   // float vx = v[0];
@@ -157,9 +159,7 @@ void LogData(float accelX, float accelY, float accelZ, float gyroX, float gyroY,
     Data[idxx] = data;
     // Serial.println(Data[idxx]);
     // Serial.println(idxx);
-    axx[idxx] = accelX;
-    ayy[idxx] = accelY;
-    azz[idxx] = accelZ;
+
     idxx++;
   } else {
 

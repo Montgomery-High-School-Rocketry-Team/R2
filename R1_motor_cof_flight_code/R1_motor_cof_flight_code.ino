@@ -23,8 +23,7 @@ long startTime;
 int idxx = 0;
 bool Apogee = false;
 //in in seconds
-//float GLOB_DT = 0.0145;
-float GLOB_DT = 0.01;
+float GLOB_DT = 0.0145;
 /******************************************* END -----  DATA COLLECTION SET UP GLOBAL VALS **********************************/
 
 /*********************** START ALGO GLOBAL VALUES ***********************/
@@ -90,21 +89,22 @@ void setup(void) {
 }
 
 void loop() {
+
   imu::Vector<3> accel = bno.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
   imu::Vector<3> gyro = bno.getVector(Adafruit_BNO055::VECTOR_GYROSCOPE);
 
 
   float* dataPtr;
   dataPtr = ahrs.GetData(accel, gyro, bno, bmp);
+  axx[idxx] = dataPtr[0];
+  ayy[idxx] = dataPtr[1];
+  azz[idxx] = dataPtr[2];
 
   float* v;
   v = accel_to_v();
-  float vx = v[0];
-  float vy = v[1];
-  float vz = v[2];
-  Serial.println(vx);
-  Serial.println(vy);
-  Serial.println(vz);
+  // float vx = v[0];
+  // float vy = v[1];
+  // float vz = v[2];
 
   imu::Quaternion ASD = bno.getQuat();
   float tiltAngleFromSensor = ahrs.tilt(ASD);
@@ -225,6 +225,7 @@ void loop() {
       already_rotated_back = true;
     }
   }
+
 }
 
 
@@ -289,9 +290,7 @@ void LogData(float accelX, float accelY, float accelZ, float gyroX, float gyroY,
     Data[idxx] = data;
     // Serial.println(Data[idxx]);
     // Serial.println(idxx);
-    axx[idxx] = accelX;
-    ayy[idxx] = accelY;
-    azz[idxx] = accelZ;
+    
     idxx++;
   } else {
 
@@ -434,8 +433,8 @@ float* accel_to_v() {
   float vz = ahrs.integrate(a, b, azz, dt);
 
   //ahrs.sqrt10(const double number)
-  float v  = ahrs.sqrt10(vx*vx + vy*vy + vz*vz);
-  Serial.println(v);
+  float vv  = ahrs.sqrt10(vx*vx + vy*vy + vz*vz);
+  Serial.println(vv);
   static float v[3];
   v[0] = vx;
   v[1] = vy;
