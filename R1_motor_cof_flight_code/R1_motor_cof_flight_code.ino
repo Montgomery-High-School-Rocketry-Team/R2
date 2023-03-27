@@ -423,7 +423,7 @@ void BNOinit() {
 float* accel_to_v(float ax,float ay, float az) {
   
   axx[idxx] = ax;
-  ayy[idxx] = ay-9.81;
+  ayy[idxx] = ay;
   azz[idxx] = az;
   int a = 0;
   int b = idxx;
@@ -433,7 +433,7 @@ float* accel_to_v(float ax,float ay, float az) {
   float vy = ahrs.integrate(a, b, ayy, dt);
   float vz = ahrs.integrate(a, b, azz, dt);
 
-  float vv  = ahrs.sqrt10(vx*vx + vy*vy + vz*vz);
+  //float vv  = ahrs.sqrt10(vx*vx + vy*vy + vz*vz);
   //Serial.println(vv);
   static float v[3];
   v[0] = vx;
